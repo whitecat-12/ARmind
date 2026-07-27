@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AR Bumi - MindAR + Three.js</title>
+    <style>
+        /* ── Reset & dasar ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #0a0a0f;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            touch-action: none;
+        }
+
+        /* ── Loading screen ── */
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a0f;
+            z-index: 300;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        #loading .spinner {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 3px solid rgba(100, 180, 255, 0.15);
+            border-top-color: #4fc3f7;
+            animation: spin 0.9s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+            margin-bottom: 28px;
+            box-shadow: 0 0 30px rgba(79, 195, 247, 0.1);
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        #loading p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 17px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        #loading p span {
+            display: inline-block;
+            animation: pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* ── Status bar ── */
+        #status {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 14px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 10px 26px;
+            border-radius: 30px;
+            z-index: 100;
+            text-align: center;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        #status.hidden {
+            opacity: 0;
+            transform: translateX(-50%) translateY(12px);
+        }
+        #status .icon {
+            margin-right: 8px;
+        }
+        #status.found {
+            background: rgba(0, 200, 100, 0.2);
+            border-color: rgba(0, 255, 150, 0.25);
+            color: #7dffb3;
+        }
+
+        /* ── Info kecil ── */
+        #info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            font-weight: 300;
+            z-index: 50;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            #status {
+                font-size: 12px;
+                padding: 8px 18px;
+                bottom: 24px;
+                white-space: normal;
+                max-width: 90vw;
+            }
+            #loading p {
+                font-size: 15px;
+            }
+            #info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── LOADING ─── -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>🌍 <span>Memuat AR Bumi...</span></p>
+    </div>
+
+    <!-- ─── STATUS ─── -->
+    <div id="status" class="hidden">
+        <span class="icon">🔍</span> Arahkan kamera ke target
+    </div>
+
+    <!-- ─── INFO ─── -->
+    <div id="info">AR Bumi · MindAR</div>
+
+    <!-- ─── LIBRARY: three.js ─── -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js">
+    </script>
+
+    <!-- ─── LIBRARY: mindar-js (image + three) ─── -->
+    <script src="https://cdn.jsdelivr.net/npm/mindar-js@1.2.0/dist/mindar-image-three.prod.js">
+    </script>
+
+    <!-- ─── MAIN SCRIPT ─── -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ── DOM refs ──
+            const loadingEl = document.getElementById('loading');
+            const statusEl = document.getElementById('status');
+
+            // ── Helper: update status ──
+            function setStatus(text, isFound = false) {
+                statusEl.innerHTML = text;
+                statusEl.classList.remove('hidden', 'found');
+                if (isFound) {
+                    statusEl.classList.add('found');
+                }
+                // force reflow then show
+                void statusEl.offsetWidth;
+                statusEl.classList.remove('hidden');
+            }
+
+            // ── Cek apakah MindARThreeView tersedia ──
+            let MindARThreeViewCtor = window.MindARThreeView || window.MindARThree;
+            if (!MindARThreeViewCtor) {
+                // fallback: coba cari di window
+                for (const key of Object.keys(window)) {
+                    if (key.toLowerCase().includes('mindar') && typeof window[key] === 'function') {
+                        MindARThreeViewCtor = window[key];
+                        break;
+                    }
+                }
+            }
+            if (!MindARThreeViewCtor) {
+                loadingEl.innerHTML = `
+              <div style="color:#ff6b6b;font-size:28px;margin-bottom:16px;">⚠️</div>
+              <p style="color:rgba(255,255,255,0.8);">Gagal memuat MindAR.<br>Periksa koneksi internet.</p>
+            `;
+                console.error('MindARThreeView tidak ditemukan.');
+                return;
+            }
+
+            console.log('✅ MindARThreeView ditemukan.');
+
+            // ── Inisialisasi view ──
+            let view;
+            let earthMesh = null;
+            let earthGroup = null;
+            let isReady = false;
+
+            try {
+                view = new MindARThreeViewCtor({
+                    container: document.body,
+                    imageTargetSrc: 'bumi.mind', // file yang sudah disiapkan user
+                    maxTrack: 1,
+                    uiLoading: false,
+                    uiScanning: false,
+                    uiRendering: false,
+                    cameraConfig: {
+                        // biarkan default
+                    }
+                });
+            } catch (err) {
+                loadingEl.innerHTML = `
+              <div style="color:#ff6b6b;font-size:28px;margin-bottom:16px;">⚠️</div>
+              <p style="color:rgba(255,255,255,0.8);">Error: ${err.message}</p>
+            `;
+                console.error('Gagal inisialisasi MindAR:', err);
+                return;
+            }
+
+            // ── Ambil scene, camera, renderer dari view ──
+            const { scene, camera, renderer } = view;
+
+            // ── Setup scene ──
+            scene.background = new THREE.Color(0x0a0a0f);
+
+            // ── Lighting ──
+            const ambient = new THREE.AmbientLight(0x40406b, 0.6);
+            scene.add(ambient);
+
+            const sun = new THREE.DirectionalLight(0xffeedd, 2.2);
+            sun.position.set(5, 3, 6);
+            scene.add(sun);
+            const sunFill = new THREE.DirectionalLight(0x4488ff, 0.7);
+            sunFill.position.set(-4, -1, -5);
+            scene.add(sunFill);
+
+            const rim = new THREE.DirectionalLight(0x88ccff, 0.5);
+            rim.position.set(-2, 5, -3);
+            scene.add(rim);
+
+            // ── Texture loader ──
+            const texLoader = new THREE.TextureLoader();
+
+            // ── Buat Bumi ──
+            function createEarth() {
+                const group = new THREE.Group();
+
+                // 1. Sphere bumi
+                const geo = new THREE.SphereGeometry(0.9, 72, 72);
+                const texUrl =
+                    'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/textures/planets/earth_atmos_2048.jpg';
+                const map = texLoader.load(texUrl);
+                const mat = new THREE.MeshStandardMaterial({
+                    map: map,
+                    roughness: 0.45,
+                    metalness: 0.05,
+                    emissive: new THREE.Color(0x112244),
+                    emissiveIntensity: 0.08,
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
+                group.add(mesh);
+
+                // 2. Atmosphere glow (sphere lebih besar)
+                const glowGeo = new THREE.SphereGeometry(0.96, 48, 48);
+                const glowMat = new THREE.ShaderMaterial({
+                    vertexShader: `
+                varying vec3 vNormal;
+                varying vec3 vViewDir;
+                void main() {
+                  vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                  vNormal = normalize(normalMatrix * normal);
+                  vViewDir = normalize(-mvPos.xyz);
+                  gl_Position = projectionMatrix * mvPos;
+                }
+              `,
+                    fragmentShader: `
+                varying vec3 vNormal;
+                varying vec3 vViewDir;
+                void main() {
+                  float rim = 1.0 - max(0.0, dot(vNormal, vViewDir));
+                  rim = pow(rim, 3.0);
+                  vec3 color = mix(vec3(0.3, 0.6, 1.0), vec3(0.1, 0.3, 0.8), rim);
+                  gl_FragColor = vec4(color, rim * 0.55);
+                }
+              `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    side: THREE.FrontSide,
+                });
+                const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+                group.add(glowMesh);
+
+                // 3. Bintang latar (partikel kecil) — hanya untuk efek, opsional
+                // Tapi lebih baik kita tambahkan di scene global
+
+                return { group, mesh };
+            }
+
+            const earthData = createEarth();
+            earthMesh = earthData.mesh;
+            earthGroup = earthData.group;
+
+            // ── Tambahkan bintang ke scene ──
+            function addStars() {
+                const count = 2000;
+                const positions = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                for (let i = 0; i < count; i++) {
+                    const radius = 20 + Math.random() * 60;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = radius * Math.cos(phi);
+                    sizes[i] = 0.5 + Math.random() * 1.5;
+                }
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                const mat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.15,
+                    transparent: true,
+                    opacity: 0.7,
+                    sizeAttenuation: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                });
+                const stars = new THREE.Points(geo, mat);
+                stars.name = 'stars';
+                scene.add(stars);
+                return stars;
+            }
+            const starsField = addStars();
+
+            // ── Tambahkan Earth ke anchor ──
+            // Target index 0 (target pertama di .mind)
+            let anchorAdded = false;
+            let anchorGroup = null;
+
+            try {
+                view.addAnchor(0, (anchor) => {
+                    anchorAdded = true;
+                    anchorGroup = anchor.group;
+                    // Tambahkan earth ke group anchor
+                    anchor.group.add(earthGroup);
+                    console.log('✅ Earth ditambahkan ke anchor.');
+
+                    // Sembunyikan loading
+                    loadingEl.classList.add('hidden');
+
+                    // Tampilkan status
+                    setStatus('🔍 Arahkan kamera ke target', false);
+
+                    // Tandai siap
+                    isReady = true;
+                });
+            } catch (err) {
+                console.warn('addAnchor error:', err);
+                // fallback: coba tambahkan langsung ke scene (tapi tanpa tracking)
+                scene.add(earthGroup);
+                loadingEl.classList.add('hidden');
+                setStatus('⚠️ Mode tanpa tracking (anchor gagal)', false);
+                isReady = true;
+            }
+
+            // ── Event tracking ──
+            view.on('targetFound', (ev) => {
+                console.log('🎯 Target ditemukan!', ev);
+                setStatus('✅ Bumi terdeteksi!', true);
+            });
+
+            view.on('targetLost', (ev) => {
+                console.log('👋 Target hilang.', ev);
+                setStatus('🔍 Arahkan kamera ke target', false);
+            });
+
+            view.on('targetUpdate', (ev) => {
+                // bisa digunakan untuk tracking status
+            });
+
+            // ── Animasi rotasi ──
+            let clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const delta = clock.getDelta();
+
+                // Rotasi bumi jika sudah ditambahkan
+                if (earthMesh && isReady) {
+                    earthMesh.rotation.y += delta * 0.18;
+                    // atmosphere ikut
+                    // glow mesh adalah child index 1
+                    if (earthGroup && earthGroup.children.length > 1) {
+                        const glow = earthGroup.children[1];
+                        if (glow && glow.isMesh) {
+                            glow.rotation.y += delta * 0.12;
+                        }
+                    }
+                }
+
+                // Rotasi bintang pelan
+                if (starsField) {
+                    starsField.rotation.y += delta * 0.003;
+                    starsField.rotation.x += delta * 0.001;
+                }
+
+                // Update status jika target hilang (tambahan)
+                // Kita sudah pakai event targetLost
+            }
+
+            // ── Mulai AR ──
+            console.log('🚀 Memulai AR...');
+            view.start()
+                .then(() => {
+                    console.log('✅ AR started.');
+                    // Jika anchor belum ditambahkan dalam waktu tertentu, fallback
+                    setTimeout(() => {
+                        if (!anchorAdded && !loadingEl.classList.contains('hidden')) {
+                            // Coba lagi atau fallback
+                            console.warn('⚠️ Anchor tidak terdeteksi, coba fallback...');
+                            // Tambahkan earth ke scene langsung agar terlihat
+                            if (!scene.children.includes(earthGroup)) {
+                                scene.add(earthGroup);
+                            }
+                            loadingEl.classList.add('hidden');
+                            setStatus('⚠️ Target tidak terdeteksi, tampilkan Bumi', false);
+                            isReady = true;
+                        }
+                    }, 5000);
+                })
+                .catch((err) => {
+                    console.error('❌ Gagal start AR:', err);
+                    loadingEl.innerHTML = `
+                <div style="color:#ff6b6b;font-size:28px;margin-bottom:16px;">⚠️</div>
+                <p style="color:rgba(255,255,255,0.8);">Gagal mengakses kamera:<br>${err.message || 'Periksa izin kamera'}</p>
+              `;
+                    // Tampilkan bumi tetap di layar sebagai fallback
+                    if (earthGroup && !scene.children.includes(earthGroup)) {
+                        scene.add(earthGroup);
+                        // Atur posisi di depan kamera
+                        earthGroup.position.set(0, 0, -3);
+                    }
+                    setStatus('⚠️ Kamera tidak tersedia', false);
+                    isReady = true;
+                });
+
+            // ── Jalankan animasi ──
+            animate();
+
+            // ── Handle resize ──
+            window.addEventListener('resize', () => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                if (camera) {
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                }
+                if (renderer) {
+                    renderer.setSize(w, h);
+                }
+            });
+
+            // ── Handle error texture ──
+            // Jika texture gagal load, buat warna solid
+            texLoader.load(
+                'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/textures/planets/earth_atmos_2048.jpg',
+                () => { /* sukses */ },
+                undefined,
+                (err) => {
+                    console.warn('Texture Earth gagal dimuat, gunakan warna solid.', err);
+                    if (earthMesh) {
+                        earthMesh.material = new THREE.MeshStandardMaterial({
+                            color: 0x2299ff,
+                            roughness: 0.5,
+                            metalness: 0.1,
+                            emissive: new THREE.Color(0x112244),
+                            emissiveIntensity: 0.1,
+                        });
+                    }
+                }
+            );
+
+            // ── Expose untuk debugging ──
+            window.__ar = { view, scene, camera, renderer, earthGroup, earthMesh };
+
+            console.log('🌍 AR Bumi siap!');
+
+        })();
+    </script>
+
+</body>
+</html>
