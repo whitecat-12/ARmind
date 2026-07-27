@@ -1,521 +1,144 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-    <title>AR Bumi - MindAR.js</title>
+    <title>MindAR Three.js Cube</title>
 
     <style>
-        /* reset & fullscreen */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html,
         body {
-            width: 100%;
-            height: 100%;
+            margin: 0;
             overflow: hidden;
-            background: #111;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            color: #fff;
-            touch-action: none;
         }
 
-        /* video & canvas dari mindar-three akan ditempel di body */
-        body video,
-        body canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-
-        /* ===== overlay UI di atas AR ===== */
-        #ui-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        #controls {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 8px 14px;
-            border-radius: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            pointer-events: auto;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        #controls label {
-            font-size: 13px;
-            color: #ddd;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-        #controls input[type="range"] {
-            width: 120px;
-            height: 4px;
-            -webkit-appearance: none;
-            appearance: none;
-            background: linear-gradient(90deg, #4fc3f7, #0288d1);
-            border-radius: 4px;
-            outline: none;
-            cursor: pointer;
-        }
-        #controls input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            border: 2px solid #0288d1;
-        }
-        #controls input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            border: 2px solid #0288d1;
-        }
-        #speed-value {
-            font-size: 13px;
-            color: #4fc3f7;
-            font-weight: 600;
-            min-width: 36px;
-            text-align: center;
-        }
-
-        /* tombol info di bawah */
-        #bottom-panel {
-            position: absolute;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            pointer-events: none;
-            z-index: 30;
-        }
-        #menuToggle {
-            pointer-events: auto;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            color: #fff;
-            padding: 10px 22px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            transition: background 0.2s;
-            letter-spacing: 0.5px;
-        }
-        #menuToggle:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        #menuToggle:active {
-            transform: scale(0.95);
-        }
-
-        /* Drawer info slide-up */
-        #infoDrawer {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: -340px;
-            width: min(480px, 92%);
-            max-height: 300px;
-            background: rgba(20, 20, 30, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.7);
-            padding: 20px 24px 24px;
-            box-sizing: border-box;
-            transition: bottom 380ms cubic-bezier(0.22, 0.8, 0.36, 1);
-            z-index: 40;
-            overflow-y: auto;
-            pointer-events: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        #infoDrawer.show {
-            bottom: 82px;
-        }
-
-        #infoDrawer h4 {
-            margin: 0 0 8px;
-            font-size: 20px;
-            font-weight: 700;
-            color: #4fc3f7;
-            letter-spacing: 0.5px;
-        }
-        #infoDrawer p {
-            margin: 6px 0;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #ccc;
-        }
-        #infoDrawer strong {
-            color: #fff;
-        }
-        #infoDrawer .close-hint {
-            margin-top: 12px;
-            font-size: 13px;
-            color: #888;
-            text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding-top: 12px;
-        }
-
-        /* instruksi AR kecil di awal */
-        #ar-hint {
-            position: absolute;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 13px;
-            color: #aaa;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            pointer-events: none;
-            z-index: 15;
-            transition: opacity 0.8s ease;
-            text-align: center;
-            max-width: 80%;
-        }
-        #ar-hint.hidden {
-            opacity: 0;
-        }
-        #ar-hint span {
-            color: #4fc3f7;
-        }
-
-        /* responsif kecil */
-        @media (max-width: 600px) {
-            #controls {
-                top: 10px;
-                padding: 6px 12px;
-                gap: 6px;
-                border-radius: 24px;
-            }
-            #controls label {
-                font-size: 11px;
-            }
-            #controls input[type="range"] {
-                width: 80px;
-            }
-            #speed-value {
-                font-size: 11px;
-                min-width: 28px;
-            }
-            #menuToggle {
-                padding: 8px 16px;
-                font-size: 13px;
-            }
-            #infoDrawer {
-                padding: 16px 18px 20px;
-                width: 94%;
-                max-height: 260px;
-            }
-            #infoDrawer.show {
-                bottom: 72px;
-            }
-            #infoDrawer h4 {
-                font-size: 17px;
-            }
-            #infoDrawer p {
-                font-size: 13px;
-            }
-            #ar-hint {
-                font-size: 11px;
-                padding: 8px 16px;
-                bottom: 80px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            #controls input[type="range"] {
-                width: 60px;
-            }
-            #controls {
-                padding: 4px 10px;
-                gap: 4px;
-            }
-            #controls label {
-                font-size: 10px;
-            }
-        }
-
-        /* scrollbar drawer */
-        #infoDrawer::-webkit-scrollbar {
-            width: 4px;
-        }
-        #infoDrawer::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #infoDrawer::-webkit-scrollbar-thumb {
-            background: #4fc3f7;
-            border-radius: 4px;
+        #container {
+            width: 100vw;
+            height: 100vh;
         }
     </style>
+
+
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <!-- MindAR -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+
 </head>
+
+
 <body>
 
-    <!-- overlay UI (di atas AR) -->
-    <div id="ui-overlay">
-        <!-- slider rotasi -->
-        <div id="controls">
-            <label>🔄 Rotasi</label>
-            <input id="speed" type="range" min="0" max="0.06" step="0.001" value="0.008">
-            <span id="speed-value">0.008</span>
-        </div>
+<div id="container"></div>
 
-        <!-- hint awal -->
-        <div id="ar-hint">
-            📷 Arahkan kamera ke <span>kartu target</span> untuk melihat Bumi
-        </div>
 
-        <!-- tombol info -->
-        <div id="bottom-panel">
-            <button id="menuToggle" aria-expanded="false">☰ Info Planet</button>
-        </div>
+<script>
 
-        <!-- drawer info -->
-        <div id="infoDrawer" aria-hidden="true">
-            <h4>🌍 Planet Bumi</h4>
-            <p>Bumi adalah planet ketiga dari Matahari dan satu-satunya planet yang diketahui memiliki kehidupan.</p>
-            <p><strong>Diameter:</strong> ~12.742 km<br>
-                <strong>Rotasi:</strong> 24 jam<br>
-                <strong>Revolusi:</strong> 365 hari</p>
-            <p>🌐 <strong>AR Mode:</strong> Arahkan kamera ke kartu target. Geser slider untuk mengatur kecepatan rotasi.</p>
-            <div class="close-hint">✦ Ketuk tombol Info lagi untuk menutup ✦</div>
-        </div>
-    </div>
 
-    <!-- ====== THREE.JS + MINDAR dari CDN ====== -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mindar-image@1.2.0/dist/mindar-image.umd.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mindar-three@1.2.0/dist/mindar-three.umd.js">
-    </script>
+const container = document.querySelector("#container");
 
-    <script>
-        (function() {
-            'use strict';
 
-            // ===== elemen =====
-            const speedInput = document.getElementById('speed');
-            const speedDisplay = document.getElementById('speed-value');
-            const menuToggle = document.getElementById('menuToggle');
-            const infoDrawer = document.getElementById('infoDrawer');
-            const arHint = document.getElementById('ar-hint');
+// AR Controller
+const mindarThree = new MindARThree({
 
-            // ===== inisialisasi MindARThree =====
-            // 🔥 pakai container: document.body dan target.mind (CDN card.mind)
-            // Ganti URL ini dengan path ke file .mind-mu sendiri jika punya
-            const TARGET_URL =
-                'https://cdn.jsdelivr.net/npm/mindar-image@1.2.0/targets/card.mind';
+    container: container,
 
-            const mindar = new MindARThree({
-                container: document.body,
-                imageTargetSrc: TARGET_URL,
-                // targetSize: 1, // opsional: ukuran target dalam meter
-                // maxTrack: 2,
-            });
+    imageTargetSrc:
+    "./marker/hiro.mind"
 
-            const { renderer, scene, camera } = mindar;
+});
 
-            // ===== lighting =====
-            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambient);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
-            dirLight.position.set(3, 4, 5);
-            scene.add(dirLight);
+const {
+    renderer,
+    scene,
+    camera
+} = mindarThree;
 
-            const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
-            fillLight.position.set(-3, -1, -2);
-            scene.add(fillLight);
 
-            // ===== variabel untuk earth & clouds =====
-            let earth = null;
-            let clouds = null;
-            let rotationSpeed = parseFloat(speedInput.value);
 
-            // ===== texture loader =====
-            const loader = new THREE.TextureLoader();
+// Cahaya
+const light = new THREE.HemisphereLight(
+    0xffffff,
+    0xbbbbff,
+    1
+);
 
-            function loadTex(url) {
-                return new Promise((resolve) => {
-                    loader.load(url, resolve, undefined, () => resolve(null));
-                });
-            }
+scene.add(light);
 
-            // ===== buat Earth =====
-            async function createEarth() {
-                const [map, bump, spec, cloud] = await Promise.all([
-                    loadTex('earthmap1k.jpg'),
-                    loadTex('earthbump.jpg'),
-                    loadTex('specularmap.jpg'),
-                    loadTex('earthCloud.png')
-                ]);
 
-                const mat = new THREE.MeshPhongMaterial({
-                    color: map ? undefined : 0x4488cc,
-                    map: map || undefined,
-                    bumpMap: bump || undefined,
-                    bumpScale: bump ? 0.04 : 0,
-                    specularMap: spec || undefined,
-                    specular: spec ? new THREE.Color(0x333333) : new THREE.Color(0x222222),
-                    shininess: 25,
-                });
 
-                const earthGeo = new THREE.SphereGeometry(0.5, 64, 64);
-                earth = new THREE.Mesh(earthGeo, mat);
-                earth.position.set(0, 0, 0);
+// Buat Cube
+const geometry = new THREE.BoxGeometry(
+    1,
+    1,
+    1
+);
 
-                if (cloud) {
-                    const cloudMat = new THREE.MeshPhongMaterial({
-                        map: cloud,
-                        transparent: true,
-                        depthWrite: false,
-                        opacity: 0.6,
-                    });
-                    clouds = new THREE.Mesh(new THREE.SphereGeometry(0.505, 64, 64), cloudMat);
-                    clouds.position.set(0, 0, 0);
-                }
 
-                scene.add(earth);
-                if (clouds) scene.add(clouds);
+const material = new THREE.MeshStandardMaterial({
+    color: 0x00ff00
+});
 
-                if (arHint) arHint.classList.add('hidden');
-                animate();
-            }
 
-            // ===== animasi loop =====
-            function animate() {
-                renderer.setAnimationLoop(() => {
-                    if (earth) {
-                        earth.rotation.y += rotationSpeed;
-                    }
-                    if (clouds) {
-                        clouds.rotation.y += rotationSpeed * 1.15;
-                    }
-                    renderer.render(scene, camera);
-                });
-            }
+const cube = new THREE.Mesh(
+    geometry,
+    material
+);
 
-            // ===== start AR =====
-            async function startAR() {
-                try {
-                    await mindar.start();
-                    await createEarth();
-                } catch (err) {
-                    console.error('MindAR start error:', err);
-                    if (arHint) {
-                        arHint.innerHTML =
-                            '⚠️ Gagal mengakses kamera. Pastikan menggunakan HTTPS dan izinkan kamera.';
-                        arHint.classList.remove('hidden');
-                    }
-                }
-            }
 
-            // ===== speed control =====
-            speedInput.addEventListener('input', function() {
-                rotationSpeed = parseFloat(this.value);
-                speedDisplay.textContent = rotationSpeed.toFixed(3);
-            });
 
-            // ===== drawer toggle =====
-            menuToggle.addEventListener('click', function() {
-                const showing = infoDrawer.classList.toggle('show');
-                this.setAttribute('aria-expanded', showing ? 'true' : 'false');
-                if (showing && arHint) arHint.classList.add('hidden');
-            });
+// posisi cube di marker
+cube.position.set(
+    0,
+    0,
+    0
+);
 
-            // ===== resize handler =====
-            function onResize() {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
-                if (camera) {
-                    camera.aspect = w / h;
-                    camera.updateProjectionMatrix();
-                }
-                if (renderer) {
-                    renderer.setSize(w, h);
-                }
-            }
-            window.addEventListener('resize', onResize);
-            window.addEventListener('orientationchange', function() {
-                setTimeout(onResize, 300);
-            });
 
-            // ===== mulai =====
-            startAR();
+cube.rotation.x = Math.PI / 4;
+cube.rotation.y = Math.PI / 4;
 
-            window.addEventListener('beforeunload', function() {
-                if (mindar) mindar.stop();
-            });
 
-            // ===== klik di luar drawer untuk menutup =====
-            document.addEventListener('click', function(e) {
-                if (infoDrawer.classList.contains('show')) {
-                    const isInside = infoDrawer.contains(e.target);
-                    const isToggle = menuToggle.contains(e.target);
-                    if (!isInside && !isToggle) {
-                        infoDrawer.classList.remove('show');
-                        menuToggle.setAttribute('aria-expanded', 'false');
-                    }
-                }
-            });
 
-            // ===== fallback texture =====
-            setTimeout(() => {
-                if (!earth) {
-                    const mat = new THREE.MeshPhongMaterial({
-                        color: 0x4488cc,
-                        emissive: 0x112244,
-                        emissiveIntensity: 0.1,
-                        shininess: 30,
-                    });
-                    earth = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 48), mat);
-                    earth.position.set(0, 0, 0);
-                    scene.add(earth);
-                    if (arHint) arHint.classList.add('hidden');
-                    animate();
-                    console.log('AR Earth: fallback warna (texture tidak ditemukan)');
-                }
-            }, 4000);
+// Anchor marker
+const anchor = mindarThree.addAnchor(0);
 
-        })();
-    </script>
+
+anchor.group.add(cube);
+
+
+
+// Animasi
+const clock = new THREE.Clock();
+
+
+async function start(){
+
+    await mindarThree.start();
+
+
+    renderer.setAnimationLoop(()=>{
+
+        let t = clock.getElapsedTime();
+
+
+        cube.rotation.y = t;
+
+
+        renderer.render(
+            scene,
+            camera
+        );
+
+    });
+
+}
+
+
+start();
+
+
+
+</script>
 
 </body>
 </html>
