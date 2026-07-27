@@ -23,32 +23,26 @@
             touch-action: none;
         }
 
-        /* container AR diisi oleh mindar-three */
-        #ar-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            background: #000;
-        }
-
-        /* video & canvas dari mindar-three akan mengisi container */
-        #ar-container video,
-        #ar-container canvas {
+        /* video & canvas dari mindar-three akan ditempel di body */
+        body video,
+        body canvas {
             display: block;
             width: 100% !important;
             height: 100% !important;
             object-fit: cover;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
-        /* ===== overlay UI ===== */
+        /* ===== overlay UI di atas AR ===== */
         #ui-overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            /* biar klik tembus ke canvas AR, kecuali elemen interaktif */
             z-index: 20;
         }
 
@@ -293,10 +287,7 @@
 </head>
 <body>
 
-    <!-- container AR (diisi mindar-three) -->
-    <div id="ar-container"></div>
-
-    <!-- overlay UI -->
+    <!-- overlay UI (di atas AR) -->
     <div id="ui-overlay">
         <!-- slider rotasi -->
         <div id="controls">
@@ -340,7 +331,6 @@
             'use strict';
 
             // ===== elemen =====
-            const container = document.getElementById('ar-container');
             const speedInput = document.getElementById('speed');
             const speedDisplay = document.getElementById('speed-value');
             const menuToggle = document.getElementById('menuToggle');
@@ -348,21 +338,21 @@
             const arHint = document.getElementById('ar-hint');
 
             // ===== inisialisasi MindARThree =====
-            // gunakan target "card" dari repository MindAR
+            // 🔥 pakai container: document.body dan target.mind (CDN card.mind)
+            // Ganti URL ini dengan path ke file .mind-mu sendiri jika punya
             const TARGET_URL =
                 'https://cdn.jsdelivr.net/npm/mindar-image@1.2.0/targets/card.mind';
 
             const mindar = new MindARThree({
-                container: container,
+                container: document.body,
                 imageTargetSrc: TARGET_URL,
-                // targetSize: 1, // ukuran target dalam meter (opsional)
+                // targetSize: 1, // opsional: ukuran target dalam meter
                 // maxTrack: 2,
             });
 
             const { renderer, scene, camera } = mindar;
 
             // ===== lighting =====
-            // ambient + directional agar earth terlihat 3D
             const ambient = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambient);
 
@@ -382,7 +372,6 @@
             // ===== texture loader =====
             const loader = new THREE.TextureLoader();
 
-            // fungsi load texture dengan fallback
             function loadTex(url) {
                 return new Promise((resolve) => {
                     loader.load(url, resolve, undefined, () => resolve(null));
@@ -391,7 +380,6 @@
 
             // ===== buat Earth =====
             async function createEarth() {
-                // coba load semua texture dari direktori yang sama
                 const [map, bump, spec, cloud] = await Promise.all([
                     loadTex('earthmap1k.jpg'),
                     loadTex('earthbump.jpg'),
@@ -399,7 +387,6 @@
                     loadTex('earthCloud.png')
                 ]);
 
-                // material bumi
                 const mat = new THREE.MeshPhongMaterial({
                     color: map ? undefined : 0x4488cc,
                     map: map || undefined,
@@ -414,7 +401,6 @@
                 earth = new THREE.Mesh(earthGeo, mat);
                 earth.position.set(0, 0, 0);
 
-                // awan (jika ada)
                 if (cloud) {
                     const cloudMat = new THREE.MeshPhongMaterial({
                         map: cloud,
@@ -426,14 +412,10 @@
                     clouds.position.set(0, 0, 0);
                 }
 
-                // tambahkan ke scene
                 scene.add(earth);
                 if (clouds) scene.add(clouds);
 
-                // hilangkan hint setelah earth muncul
                 if (arHint) arHint.classList.add('hidden');
-
-                // mulai animasi
                 animate();
             }
 
@@ -454,11 +436,9 @@
             async function startAR() {
                 try {
                     await mindar.start();
-                    // setelah start, buat earth
                     await createEarth();
                 } catch (err) {
                     console.error('MindAR start error:', err);
-                    // fallback: tampilkan pesan
                     if (arHint) {
                         arHint.innerHTML =
                             '⚠️ Gagal mengakses kamera. Pastikan menggunakan HTTPS dan izinkan kamera.';
@@ -477,16 +457,13 @@
             menuToggle.addEventListener('click', function() {
                 const showing = infoDrawer.classList.toggle('show');
                 this.setAttribute('aria-expanded', showing ? 'true' : 'false');
-                // jika drawer terbuka, sembunyikan hint
                 if (showing && arHint) arHint.classList.add('hidden');
             });
 
             // ===== resize handler =====
             function onResize() {
-                // renderer sudah diatur otomatis oleh mindar-three,
-                // tapi kita perlu update aspect ratio camera
-                const w = container.clientWidth || window.innerWidth;
-                const h = container.clientHeight || window.innerHeight;
+                const w = window.innerWidth;
+                const h = window.innerHeight;
                 if (camera) {
                     camera.aspect = w / h;
                     camera.updateProjectionMatrix();
@@ -501,16 +478,13 @@
             });
 
             // ===== mulai =====
-            // tunggu DOM siap lalu start AR
             startAR();
 
-            // cleanup jika halaman ditutup
             window.addEventListener('beforeunload', function() {
                 if (mindar) mindar.stop();
             });
 
-            // ===== tombol info juga bisa menutup dengan klik luar =====
-            // (opsional) tap di luar drawer untuk menutup
+            // ===== klik di luar drawer untuk menutup =====
             document.addEventListener('click', function(e) {
                 if (infoDrawer.classList.contains('show')) {
                     const isInside = infoDrawer.contains(e.target);
@@ -522,11 +496,9 @@
                 }
             });
 
-            // ===== fallback jika texture tidak ada =====
-            // jika setelah 5 detik earth belum dibuat, buat dengan warna solid
+            // ===== fallback texture =====
             setTimeout(() => {
                 if (!earth) {
-                    // buat earth sederhana tanpa texture
                     const mat = new THREE.MeshPhongMaterial({
                         color: 0x4488cc,
                         emissive: 0x112244,
@@ -538,7 +510,7 @@
                     scene.add(earth);
                     if (arHint) arHint.classList.add('hidden');
                     animate();
-                    console.log('AR Earth: menggunakan fallback warna (texture tidak ditemukan)');
+                    console.log('AR Earth: fallback warna (texture tidak ditemukan)');
                 }
             }, 4000);
 
