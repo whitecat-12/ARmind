@@ -3,521 +3,804 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AR Location-Based · Three.js</title>
+    <title>WebAR Bumi &amp; Bulan</title>
     <style>
-        /* ─── RESET & LAYOUT ─── */
+        /* Reset & dasar */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            overflow: hidden;
-            background: #0b0b1a;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
             touch-action: none;
         }
 
-        /* ─── LOADING ─── */
-        #loading {
+        /* Loading Screen */
+        #loading-screen {
             position: fixed;
             inset: 0;
             z-index: 999;
+            background: #0a0e1a;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(ellipse at center, #1a1a2e, #0d0d1a);
             color: #fff;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
+            transition: opacity 0.8s ease;
         }
-        #loading.hide {
+        #loading-screen.hidden {
             opacity: 0;
-            visibility: hidden;
             pointer-events: none;
         }
-        #loading .spinner {
-            width: 56px;
-            height: 56px;
-            border: 5px solid rgba(255, 255, 255, 0.08);
-            border-top-color: #6c5ce7;
+        .loader-ring {
+            width: 64px;
+            height: 64px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #4fc3f7;
             border-radius: 50%;
-            animation: spin 1s cubic-bezier(0.6, 0, 0.4, 1) infinite;
-            margin-bottom: 24px;
-        }
-        #loading h2 {
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        #loading p {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 300;
-            margin-top: 6px;
-        }
-        #loading .bar-track {
-            width: 200px;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 4px;
-            margin-top: 18px;
-            overflow: hidden;
-        }
-        #loading .bar-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
-            border-radius: 4px;
-            transition: width 0.3s ease;
+            animation: spin 1s linear infinite;
         }
         @keyframes spin {
             to {
                 transform: rotate(360deg);
             }
         }
-
-        /* ─── INFO OVERLAY ─── */
-        #info {
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.72);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 12px 24px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 400;
-            text-align: center;
-            pointer-events: none;
-            user-select: none;
-            white-space: nowrap;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        #info .emoji {
+        #loading-screen p {
+            margin-top: 24px;
             font-size: 18px;
-            margin-right: 8px;
+            letter-spacing: 0.5px;
+            color: #b0bec5;
         }
-        #info .highlight {
-            color: #a29bfe;
-            font-weight: 600;
-        }
-        #info.gps-active {
-            background: rgba(108, 92, 231, 0.25);
-            border-color: rgba(108, 92, 231, 0.3);
-        }
-        #info.gps-active .highlight {
-            color: #6c5ce7;
-        }
-        #info.gps-error {
-            background: rgba(231, 76, 60, 0.25);
-            border-color: rgba(231, 76, 60, 0.3);
-        }
-        #info.gps-error .highlight {
-            color: #e74c3c;
+        #loading-screen .sub {
+            font-size: 14px;
+            color: #78909c;
+            margin-top: 6px;
         }
 
-        /* ─── RESPONSIVE ─── */
-        @media (max-width: 480px) {
-            #info {
-                font-size: 11px;
-                padding: 10px 16px;
-                bottom: 16px;
-                white-space: normal;
-                max-width: 90%;
-                line-height: 1.4;
-            }
-            #loading h2 {
-                font-size: 18px;
-            }
-            #loading p {
-                font-size: 12px;
-            }
-        }
-
-        /* ─── CANVAS ─── */
-        canvas {
-            display: block;
+        /* AR Container (diisi MindAR) */
+        #ar-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
             width: 100vw;
             height: 100vh;
+            overflow: hidden;
+        }
+        #ar-container video,
+        #ar-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+        }
+
+        /* UI Overlay */
+        #ui-overlay {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            padding: 0 16px;
+        }
+        #ui-overlay>* {
+            pointer-events: auto;
+        }
+
+        .btn-info {
+            background: rgba(10, 14, 30, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .btn-info:active {
+            transform: scale(0.94);
+            background: rgba(30, 40, 80, 0.85);
+        }
+        .btn-info svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        /* Panel Info */
+        #info-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.92);
+            z-index: 20;
+            background: rgba(10, 14, 30, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+            padding: 32px 28px 28px;
+            max-width: 380px;
+            width: calc(100% - 32px);
+            color: #fff;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #info-panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+        #info-panel h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #info-panel h2 .badge {
+            font-size: 12px;
+            background: rgba(79, 195, 247, 0.25);
+            color: #4fc3f7;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        #info-panel .subtitle {
+            color: #90a4ae;
+            font-size: 14px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 14px;
+        }
+        #info-panel .planet-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        #info-panel .planet-card {
+            flex: 1;
+            min-width: 100px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        #info-panel .planet-card .name {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #info-panel .planet-card .name .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        #info-panel .planet-card .detail {
+            font-size: 13px;
+            color: #b0bec5;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+        #info-panel .close-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            touch-action: manipulation;
+        }
+        #info-panel .close-btn:active {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Permission / Error */
+        #permission-msg {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            background: rgba(200, 50, 50, 0.92);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            display: none;
+            pointer-events: none;
+        }
+        #permission-msg.show {
+            display: block;
+        }
+        #permission-msg .retry {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 30px;
+            margin-left: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* Status kecil */
+        #status-tip {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 12;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            padding: 8px 20px;
+            color: #cfd8dc;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        #status-tip.show {
+            opacity: 1;
+        }
+
+        /* Scroll panel */
+        #info-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        #info-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #info-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        /* Responsif HP */
+        @media (max-width: 480px) {
+            .btn-info {
+                padding: 12px 20px;
+                font-size: 14px;
+                border-radius: 40px;
+            }
+            #info-panel {
+                padding: 24px 20px 20px;
+                max-width: 340px;
+            }
+            #info-panel h2 {
+                font-size: 19px;
+            }
+            #info-panel .planet-card {
+                min-width: 80px;
+                padding: 12px 12px;
+            }
+            #info-panel .planet-card .detail {
+                font-size: 12px;
+            }
+            #loading-screen p {
+                font-size: 16px;
+            }
+            #status-tip {
+                font-size: 11px;
+                padding: 6px 14px;
+                top: 12px;
+            }
+        }
+        @media (max-width: 380px) {
+            #info-panel .planet-row {
+                flex-direction: column;
+            }
+            .btn-info {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== LOADING ===== -->
-    <div id="loading">
-        <div class="spinner"></div>
-        <h2>AR Location-Based</h2>
-        <p>Mengakses GPS &amp; kamera …</p>
-        <div class="bar-track">
-            <div class="bar-fill" id="loadBar"></div>
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loader-ring"></div>
+        <p>Memulai AR &hellip;</p>
+        <div class="sub">Silakan arahkan kamera ke marker</div>
+    </div>
+
+    <!-- KONTAINER AR (MindAR) -->
+    <div id="ar-container"></div>
+
+    <!-- STATUS TIP -->
+    <div id="status-tip">🔍 Cari marker Bumi</div>
+
+    <!-- PERMISSION ERROR -->
+    <div id="permission-msg">
+        ⚠️ Kamera tidak diizinkan.
+        <button class="retry" id="retry-cam">Coba Lagi</button>
+    </div>
+
+    <!-- UI OVERLAY -->
+    <div id="ui-overlay">
+        <button class="btn-info" id="btn-info">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Info Planet
+        </button>
+    </div>
+
+    <!-- INFO PANEL -->
+    <div id="info-panel">
+        <h2>
+            🌌 Tata Surya Kecil
+            <span class="badge">AR</span>
+        </h2>
+        <div class="subtitle">Bumi &amp; Bulan dalam genggaman</div>
+
+        <div class="planet-row">
+            <div class="planet-card">
+                <div class="name"><span class="dot" style="background:#4fc3f7;"></span> Bumi</div>
+                <div class="detail">Diameter ~12.742 km<br />Periode rotasi 24 jam</div>
+            </div>
+            <div class="planet-card">
+                <div class="name"><span class="dot" style="background:#bdbdbd;"></span> Bulan</div>
+                <div class="detail">Diameter ~3.474 km<br />Jarak ~384.400 km</div>
+            </div>
         </div>
+        <div style="margin-top:14px;font-size:13px;color:#78909c;line-height:1.6;border-top:1px solid rgba(255,255,255,0.05);padding-top:14px;">
+            🌍 Bumi berputar perlahan &bull; 🌙 Bulan mengorbit
+        </div>
+        <button class="close-btn" id="close-info">Tutup</button>
     </div>
 
-    <!-- ===== INFO ===== -->
-    <div id="info">
-        <span class="emoji">📍</span>
-        <span id="infoText">Mencari lokasi GPS …</span>
-    </div>
-
-    <!-- ===== THREE.JS & AR.JS ===== -->
+    <!-- ============ SCRIPTS ============ -->
+    <!-- Three.js r152 (compatible & ringan) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/three.js/build/ar-three.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/three.js/build/ar-location-based.js">
+
+    <!-- MindAR Image Tracking + Three.js integration (UMD) -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-three.prod.js">
     </script>
 
-    <!-- ===== MAIN ===== -->
     <script>
         (function() {
             'use strict';
 
-            // ─── DOM refs ──────────────────────────────────────────────
-            const loadingEl = document.getElementById('loading');
-            const loadBar = document.getElementById('loadBar');
-            const infoEl = document.getElementById('info');
-            const infoText = document.getElementById('infoText');
+            // --- DOM refs ---
+            const loadingEl = document.getElementById('loading-screen');
+            const container = document.getElementById('ar-container');
+            const statusTip = document.getElementById('status-tip');
+            const permMsg = document.getElementById('permission-msg');
+            const retryBtn = document.getElementById('retry-cam');
+            const infoBtn = document.getElementById('btn-info');
+            const infoPanel = document.getElementById('info-panel');
+            const closeInfo = document.getElementById('close-info');
 
-            let loadProgress = 0;
-            let gpsReady = false;
-            let objectGroup = null;
-            let animTime = 0;
+            // --- State ---
+            let mindar = null;
+            let scene = null;
+            let camera = null;
+            let renderer = null;
+            let earthMesh = null;
+            let moonMesh = null;
+            let moonOrbit = null;
+            let isRunning = false;
+            let animationId = null;
+            let targetFound = false;
+            let clock = new THREE.Clock();
 
-            function updateLoad(progress) {
-                loadProgress = Math.min(progress, 100);
-                loadBar.style.width = loadProgress + '%';
-                if (loadProgress >= 100) {
-                    setTimeout(() => loadingEl.classList.add('hide'), 500);
-                }
+            // --- Helpers ---
+            function showStatus(msg, show) {
+                statusTip.textContent = msg;
+                statusTip.classList.toggle('show', show);
             }
 
-            // ─── Scene / Camera / Renderer ────────────────────────────
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111122);
+            function hideLoading() {
+                loadingEl.classList.add('hidden');
+            }
 
-            const camera = new THREE.Camera();
-            camera.position.set(0, 0, 0);
+            function showPermissionError() {
+                permMsg.classList.add('show');
+            }
 
-            const renderer = new THREE.WebGLRenderer({
-                antialias: true,
-                alpha: false,
-                powerPreference: 'high-performance',
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.2;
-            document.body.prepend(renderer.domElement);
+            function hidePermissionError() {
+                permMsg.classList.remove('show');
+            }
 
-            // ─── Lights ────────────────────────────────────────────────
-            const ambient = new THREE.AmbientLight(0x404060, 0.6);
-            scene.add(ambient);
+            // --- Inisialisasi Three.js Scene ---
+            function initThreeScene() {
+                // Scene
+                scene = new THREE.Scene();
 
-            const key = new THREE.DirectionalLight(0xffeedd, 1.8);
-            key.position.set(2, 4, 3);
-            key.castShadow = true;
-            key.shadow.mapSize.width = 1024;
-            key.shadow.mapSize.height = 1024;
-            scene.add(key);
+                // Kamera Three.js (akan di-override oleh MindAR)
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-            const fill = new THREE.DirectionalLight(0x4488ff, 0.6);
-            fill.position.set(-2, 1, -2);
-            scene.add(fill);
-
-            const rim = new THREE.DirectionalLight(0xff8844, 0.4);
-            rim.position.set(0, -1, -3);
-            scene.add(rim);
-
-            const hemi = new THREE.HemisphereLight(0x4466ff, 0x223344, 0.5);
-            scene.add(hemi);
-
-            // ─── Ground shadow plane ──────────────────────────────────
-            const planeGeo = new THREE.PlaneGeometry(3, 3);
-            const planeMat = new THREE.ShadowMaterial({ opacity: 0.3, color: 0x000000 });
-            const plane = new THREE.Mesh(planeGeo, planeMat);
-            plane.rotation.x = -Math.PI / 2;
-            plane.position.y = -0.5;
-            plane.receiveShadow = true;
-            scene.add(plane);
-
-            // ─── WebcamRenderer (for video background) ───────────────
-            const webcamRenderer = new THREEx.WebcamRenderer(renderer, camera);
-
-            // ─── LocationBased ────────────────────────────────────────
-            const locationBased = new THREEx.LocationBased(scene, camera);
-
-            // ─── Build 3D Object Group ───────────────────────────────
-            function buildObjectGroup() {
-                const group = new THREE.Group();
-
-                // Torus Knot
-                const knotGeo = new THREE.TorusKnotGeometry(0.5, 0.18, 128, 24);
-                const knotMat = new THREE.MeshPhysicalMaterial({
-                    color: new THREE.Color('#6c5ce7'),
-                    metalness: 0.25,
-                    roughness: 0.15,
-                    clearcoat: 0.35,
-                    clearcoatRoughness: 0.25,
-                    emissive: new THREE.Color('#3d2e7c'),
-                    emissiveIntensity: 0.15,
-                    envMapIntensity: 1.2,
+                // Renderer
+                const pixelRatio = Math.min(window.devicePixelRatio, 2);
+                renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true,
                 });
-                const knot = new THREE.Mesh(knotGeo, knotMat);
-                knot.castShadow = true;
-                knot.receiveShadow = true;
-                knot.position.y = 0.1;
-                group.add(knot);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(pixelRatio);
+                renderer.setClearColor(0x000000, 0); // transparan
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.2;
+                container.prepend(renderer.domElement);
 
-                // Glow ring
-                const ringGeo = new THREE.TorusGeometry(0.58, 0.025, 48, 48);
-                const ringMat = new THREE.MeshPhysicalMaterial({
-                    color: new THREE.Color('#a29bfe'),
-                    emissive: new THREE.Color('#6c5ce7'),
-                    emissiveIntensity: 0.6,
-                    transparent: true,
-                    opacity: 0.7,
-                    roughness: 0.2,
-                    metalness: 0.1,
+                // --- Cahaya ---
+                const ambient = new THREE.AmbientLight(0x404060, 0.6);
+                scene.add(ambient);
+
+                const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+                dirLight.position.set(5, 8, 6);
+                dirLight.castShadow = false;
+                scene.add(dirLight);
+
+                const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+                fillLight.position.set(-4, 2, -5);
+                scene.add(fillLight);
+
+                // Rim light
+                const rimLight = new THREE.DirectionalLight(0x88ddff, 0.3);
+                rimLight.position.set(-2, 5, 8);
+                scene.add(rimLight);
+
+                // --- Objek Bumi ---
+                const earthGroup = new THREE.Group();
+
+                // Bumi dengan texture
+                const geoEarth = new THREE.SphereGeometry(1, 48, 48);
+                const textureLoader = new THREE.TextureLoader();
+                const earthTex = textureLoader.load(
+                    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+                    function() { /* selesai */ },
+                    undefined,
+                    function(err) {
+                        // Fallback jika texture gagal
+                        console.warn('Texture Earth gagal load, pakai warna', err);
+                        earthMesh.material.color.setHex(0x2196f3);
+                        earthMesh.material.map = null;
+                        earthMesh.material.needsUpdate = true;
+                    }
+                );
+                const matEarth = new THREE.MeshStandardMaterial({
+                    map: earthTex,
+                    roughness: 0.5,
+                    metalness: 0.05,
+                    emissive: new THREE.Color(0x112244),
+                    emissiveIntensity: 0.08,
                 });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.rotation.x = Math.PI / 2;
-                ring.position.y = -0.05;
-                group.add(ring);
+                earthMesh = new THREE.Mesh(geoEarth, matEarth);
+                earthMesh.castShadow = false;
+                earthMesh.receiveShadow = false;
+                earthGroup.add(earthMesh);
 
-                // Particles
-                const pCount = 140;
-                const pGeo = new THREE.BufferGeometry();
-                const pos = new Float32Array(pCount * 3);
-                for (let i = 0; i < pCount; i++) {
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.acos(2 * Math.random() - 1);
-                    const r = 0.6 + Math.random() * 0.8;
-                    pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                    pos[i * 3 + 1] = r * Math.cos(phi) + 0.1;
-                    pos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-                }
-                pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-                const pMat = new THREE.PointsMaterial({
-                    color: 0xa29bfe,
-                    size: 0.025,
-                    transparent: true,
-                    opacity: 0.6,
-                    blending: THREE.AdditiveBlending,
-                    sizeAttenuation: true,
-                });
-                const particles = new THREE.Points(pGeo, pMat);
-                group.add(particles);
-
-                // Glow sphere wireframe
-                const glowGeo = new THREE.SphereGeometry(0.75, 32, 32);
+                // Atmosphere glow (optional)
+                const glowGeo = new THREE.SphereGeometry(1.03, 32, 32);
                 const glowMat = new THREE.MeshBasicMaterial({
-                    color: 0x6c5ce7,
+                    color: 0x4fc3f7,
                     transparent: true,
-                    opacity: 0.06,
-                    wireframe: true,
+                    opacity: 0.08,
+                    side: THREE.BackSide,
                 });
                 const glow = new THREE.Mesh(glowGeo, glowMat);
-                glow.position.y = 0.1;
-                group.add(glow);
+                earthGroup.add(glow);
 
-                // Store refs for animation
-                group.userData = { knot, ring, particles, glow };
-                return group;
-            }
+                // --- Bulan ---
+                const moonGroup = new THREE.Group();
+                const geoMoon = new THREE.SphereGeometry(0.27, 24, 24);
+                const matMoon = new THREE.MeshStandardMaterial({
+                    color: 0xcccccc,
+                    roughness: 0.85,
+                    metalness: 0.02,
+                    emissive: new THREE.Color(0x222222),
+                    emissiveIntensity: 0.05,
+                });
+                moonMesh = new THREE.Mesh(geoMoon, matMoon);
+                // Texture bulan sederhana (bisa ditambah jika mau)
+                moonMesh.position.set(2.2, 0, 0);
+                moonGroup.add(moonMesh);
 
-            // ─── Add object at GPS location ──────────────────────────
-            function placeObject(lat, lon) {
-                if (objectGroup) {
-                    // Remove old if exists
-                    // locationBased.remove(objectGroup) ? Not sure, we'll just not add again.
-                    return;
-                }
+                // Tambahkan ke scene
+                scene.add(earthGroup);
+                scene.add(moonGroup);
 
-                objectGroup = buildObjectGroup();
-                // Place object ~5 meter north-east of user
-                const offsetLat = 0.000045; // ~5m
-                const offsetLon = 0.000045;
-                const objLat = lat + offsetLat;
-                const objLon = lon + offsetLon;
-                const altitude = 1.8; // meter above ground
+                // Simpan ref untuk animasi
+                moonOrbit = moonGroup;
 
-                locationBased.add(objectGroup, objLon, objLat, altitude);
-
-                // Update info
-                infoEl.classList.remove('gps-error');
-                infoEl.classList.add('gps-active');
-                infoText.innerHTML =
-                    '✨ Objek 3D <span class="highlight">muncul</span> di sekitar Anda!';
-                gpsReady = true;
-                updateLoad(100);
-            }
-
-            // ─── GPS handling ─────────────────────────────────────────
-            function startGPS() {
-                if (!navigator.geolocation) {
-                    infoEl.classList.add('gps-error');
-                    infoText.innerHTML = '❌ GPS <span class="highlight">tidak didukung</span> perangkat ini.';
-                    updateLoad(100);
-                    return;
-                }
-
-                const options = {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 5000,
-                };
-
-                let watchId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        const { latitude, longitude } = pos.coords;
-                        if (!gpsReady) {
-                            // First fix → place object
-                            placeObject(latitude, longitude);
-                            // Stop watching after placement (or keep watching for updates?)
-                            // For demo, we keep watching to update? But object stays.
-                            // We'll keep watching but only place once.
+                // --- Resize handler ---
+                window.addEventListener('resize', function() {
+                    if (renderer) {
+                        const w = window.innerWidth;
+                        const h = window.innerHeight;
+                        renderer.setSize(w, h);
+                        if (camera) {
+                            camera.aspect = w / h;
+                            camera.updateProjectionMatrix();
                         }
-                        // Update info with coordinates (optional)
-                        const latStr = latitude.toFixed(5);
-                        const lonStr = longitude.toFixed(5);
-                        if (gpsReady) {
-                            infoText.innerHTML =
-                                `📍 <span class="highlight">${latStr}</span> , <span class="highlight">${lonStr}</span>`;
-                        } else {
-                            infoText.innerHTML =
-                                `📍 Mendapatkan lokasi … <span class="highlight">${latStr}</span> , <span class="highlight">${lonStr}</span>`;
-                        }
-                    },
-                    (err) => {
-                        console.warn('GPS error:', err);
-                        infoEl.classList.add('gps-error');
-                        infoText.innerHTML =
-                            '⚠️ Gagal mendapatkan GPS. Pastikan izin lokasi diberikan.';
-                        updateLoad(100);
-                    }, options
-                );
-
-                // If no fix within 10s, show timeout message
-                setTimeout(() => {
-                    if (!gpsReady) {
-                        infoEl.classList.add('gps-error');
-                        infoText.innerHTML =
-                            '⏳ GPS <span class="highlight">timeout</span>. Coba di luar ruangan.';
-                        updateLoad(100);
                     }
-                }, 12000);
+                });
+
+                return { scene, camera, renderer };
             }
 
-            // ─── Resize ────────────────────────────────────────────────
-            window.addEventListener('resize', () => {
-                const w = window.innerWidth;
-                const h = window.innerHeight;
-                renderer.setSize(w, h);
-                if (camera) {
-                    camera.aspect = w / h;
-                    camera.updateProjectionMatrix();
-                }
-            });
+            // --- Setup MindAR ---
+            async function setupMindAR() {
+                try {
+                    // Cek apakah MindAR global tersedia
+                    const MindAR = window.MindAR || window.MindARThree;
+                    if (!MindAR) {
+                        throw new Error('MindAR library tidak ditemukan. Periksa koneksi CDN.');
+                    }
 
-            // ─── Animation Loop ────────────────────────────────────────
+                    // Gunakan MindARThree.ImageTarget atau MindAR.ImageTarget
+                    const ImageTarget = MindAR.ImageTarget || MindARThree?.ImageTarget;
+                    if (!ImageTarget) {
+                        throw new Error('MindAR ImageTarget tidak tersedia.');
+                    }
+
+                    // Inisialisasi MindAR
+                    mindar = new ImageTarget({
+                        container: container,
+                        imageTargetSrc: 'targets.mind',
+                        maxTrack: 1,
+                        uiLoading: false,
+                        uiScanning: false,
+                        uiError: false,
+                        filterMinCF: 0.01,
+                        filterBeta: 0.01,
+                    });
+
+                    // Event: target ditemukan
+                    mindar.on('targetFound', function(e) {
+                        targetFound = true;
+                        showStatus('✅ Marker Bumi terdeteksi!', true);
+                        // Sembunyikan tip setelah beberapa detik
+                        setTimeout(function() {
+                            if (targetFound) {
+                                showStatus('', false);
+                            }
+                        }, 4000);
+                    });
+
+                    mindar.on('targetLost', function(e) {
+                        targetFound = false;
+                        showStatus('🔍 Cari marker Bumi', true);
+                    });
+
+                    // Mulai kamera
+                    await mindar.start();
+
+                    // Setup Three.js setelah MindAR start
+                    const threeData = initThreeScene();
+                    scene = threeData.scene;
+                    camera = threeData.camera;
+                    renderer = threeData.renderer;
+
+                    // Hubungkan MindAR dengan Three.js
+                    mindar.setThree(camera, renderer);
+
+                    // Sembunyikan loading
+                    hideLoading();
+                    showStatus('🔍 Cari marker Bumi', true);
+
+                    isRunning = true;
+                    animate();
+
+                    return mindar;
+
+                } catch (err) {
+                    console.error('MindAR init error:', err);
+                    // Cek apakah error karena permission
+                    if (err.message && err.message.toLowerCase().includes('permission')) {
+                        showPermissionError();
+                    } else {
+                        // Tampilkan error di loading
+                        loadingEl.innerHTML = `
+                            <div style="color:#ef5350;font-size:28px;margin-bottom:12px;">⚠️</div>
+                            <p style="color:#ef9a9a;">Gagal memulai AR</p>
+                            <div class="sub" style="color:#b0bec5;max-width:280px;text-align:center;margin-top:8px;">
+                                ${err.message || 'Periksa koneksi dan izin kamera'}
+                            </div>
+                            <button onclick="location.reload()" style="margin-top:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 28px;border-radius:40px;font-size:15px;cursor:pointer;">
+                                Muat Ulang
+                            </button>
+                        `;
+                    }
+                    throw err;
+                }
+            }
+
+            // --- Animation Loop ---
             function animate() {
-                requestAnimationFrame(animate);
-                animTime += 0.012;
+                if (!isRunning) return;
 
-                // Animate object group if exists
-                if (objectGroup) {
-                    const { knot, ring, particles, glow } = objectGroup.userData;
-                    if (knot) {
-                        knot.rotation.x += 0.008;
-                        knot.rotation.y += 0.015;
-                        knot.rotation.z += 0.005;
-                        knot.position.y = 0.1 + Math.sin(animTime * 1.2) * 0.05;
-                    }
-                    if (ring) {
-                        ring.rotation.z = animTime * 0.3;
-                        ring.material.opacity = 0.5 + Math.sin(animTime * 0.8) * 0.2;
-                    }
-                    if (particles) {
-                        particles.rotation.y = animTime * 0.1;
-                        particles.rotation.x = Math.sin(animTime * 0.05) * 0.05;
-                        const pos = particles.geometry.attributes.position.array;
-                        for (let i = 0; i < pos.length / 3; i++) {
-                            const idx = i * 3;
-                            const speed = 0.002 + (i % 5) * 0.001;
-                            pos[idx + 1] += Math.sin(animTime * 0.5 + i) * speed;
-                            if (pos[idx + 1] > 0.6) pos[idx + 1] = -0.3;
-                            if (pos[idx + 1] < -0.3) pos[idx + 1] = 0.6;
-                        }
-                        particles.geometry.attributes.position.needsUpdate = true;
-                    }
-                    if (glow) {
-                        glow.rotation.x = animTime * 0.05;
-                        glow.rotation.y = animTime * 0.07;
-                        glow.material.opacity = 0.04 + Math.sin(animTime * 0.5) * 0.025;
-                    }
+                animationId = requestAnimationFrame(animate);
+
+                const delta = clock.getDelta();
+                const elapsed = clock.getElapsedTime();
+
+                // Rotasi Bumi
+                if (earthMesh) {
+                    earthMesh.rotation.y += delta * 0.25;
                 }
 
-                // Update location-based (updates camera pose)
-                if (locationBased) {
-                    locationBased.update(performance.now());
+                // Orbit Bulan
+                if (moonOrbit && moonMesh) {
+                    const orbitSpeed = 0.55;
+                    const angle = elapsed * orbitSpeed;
+                    // Bulan mengorbit di bidang miring sedikit (5 deg)
+                    const radius = 2.2;
+                    const tilt = 0.09;
+                    moonMesh.position.x = Math.cos(angle) * radius;
+                    moonMesh.position.z = Math.sin(angle) * radius * Math.cos(tilt);
+                    moonMesh.position.y = Math.sin(angle) * radius * Math.sin(tilt);
+                    // Bulan selalu menghadap ke Bumi (opsional)
+                    moonMesh.lookAt(0, 0, 0);
                 }
 
-                // Render via webcam renderer (combines video + scene)
-                if (webcamRenderer && camera) {
-                    webcamRenderer.render(scene, camera);
+                // Render via MindAR (yang akan handle kamera AR)
+                if (mindar && mindar.render) {
+                    mindar.render();
+                } else if (renderer && scene && camera) {
+                    // Fallback jika mindar.render tidak ada
+                    renderer.render(scene, camera);
                 }
             }
 
-            // ─── Start ─────────────────────────────────────────────────
-            // Simulate loading progress while GPS initializes
-            let prog = 0;
-            const loadInterval = setInterval(() => {
-                prog += Math.random() * 6 + 2;
-                if (prog >= 95) {
-                    clearInterval(loadInterval);
+            // --- Start ---
+            async function startAR() {
+                try {
+                    hidePermissionError();
+                    await setupMindAR();
+                } catch (err) {
+                    console.error('Start AR gagal:', err);
+                    // jika belum ditangani oleh setupMindAR
                 }
-                updateLoad(Math.min(prog, 95));
-            }, 150);
+            }
 
-            // Kick off GPS
-            startGPS();
-
-            // If GPS already ready, update load to 100 (handled in placeObject)
-            // Fallback: if after 15s still not ready, force hide loading
-            setTimeout(() => {
-                if (!loadingEl.classList.contains('hide')) {
-                    updateLoad(100);
+            // --- Permission handling ---
+            async function checkAndRequestCamera() {
+                try {
+                    // Cek apakah browser mendukung getUserMedia
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('Browser tidak mendukung kamera.');
+                    }
+                    // Coba akses kamera (untuk memicu permission)
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream.getTracks().forEach(t => t.stop());
+                    return true;
+                } catch (err) {
+                    console.warn('Camera permission check:', err);
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        showPermissionError();
+                    } else {
+                        // Error lain, tetap coba jalankan MindAR
+                        // (MindAR akan handle sendiri)
+                    }
+                    return false;
                 }
-            }, 15000);
+            }
 
-            // Start animation loop
-            animate();
+            // --- UI Events ---
+            infoBtn.addEventListener('click', function() {
+                infoPanel.classList.toggle('active');
+            });
 
-            // ─── Cleanup ──────────────────────────────────────────────
-            window.addEventListener('beforeunload', () => {
-                renderer.dispose();
-                if (locationBased) {
-                    // dispose if needed
+            closeInfo.addEventListener('click', function() {
+                infoPanel.classList.remove('active');
+            });
+
+            // Tutup panel jika klik di luar
+            infoPanel.addEventListener('click', function(e) {
+                if (e.target === infoPanel) {
+                    infoPanel.classList.remove('active');
                 }
             });
 
-            console.log('🌍 AR Location-Based siap!');
-            console.log('📱 Izinkan GPS dan kamera untuk melihat objek 3D di sekitar Anda.');
+            retryBtn.addEventListener('click', function() {
+                hidePermissionError();
+                // Reset dan coba lagi
+                if (mindar) {
+                    try { mindar.stop(); } catch (e) {}
+                    mindar = null;
+                }
+                isRunning = false;
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                // Hapus renderer lama
+                if (renderer && renderer.domElement && renderer.domElement.parentNode) {
+                    renderer.domElement.parentNode.removeChild(renderer.domElement);
+                }
+                // Reset loading
+                loadingEl.classList.remove('hidden');
+                loadingEl.innerHTML = `
+                    <div class="loader-ring"></div>
+                    <p>Memulai ulang AR &hellip;</p>
+                    <div class="sub">Mohon izinkan akses kamera</div>
+                `;
+                startAR();
+            });
+
+            // --- Inisialisasi ---
+            async function init() {
+                // Cek permission dulu
+                const hasPerm = await checkAndRequestCamera();
+                // Tetap lanjutkan, MindAR akan handle permission lebih lanjut
+                startAR();
+            }
+
+            // --- Handle unload ---
+            window.addEventListener('beforeunload', function() {
+                isRunning = false;
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                if (mindar) {
+                    try { mindar.stop(); } catch (e) {}
+                }
+                if (renderer) {
+                    renderer.dispose();
+                }
+            });
+
+            // --- Mulai ---
+            init();
 
         })();
     </script>
+
 </body>
 </html>
