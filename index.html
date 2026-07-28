@@ -1,760 +1,140 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>WebAR Bumi &amp; Bulan</title>
-    <style>
-        /* Reset & dasar */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: #000;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            position: relative;
-            touch-action: none;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>AR Sederhana — MindAR + Three.js</title>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #0b0f14; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
 
-        /* Loading Screen */
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            z-index: 999;
-            background: #0a0e1a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            transition: opacity 0.8s ease;
-        }
-        #loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loader-ring {
-            width: 64px;
-            height: 64px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #4fc3f7;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        #loading-screen p {
-            margin-top: 24px;
-            font-size: 18px;
-            letter-spacing: 0.5px;
-            color: #b0bec5;
-        }
-        #loading-screen .sub {
-            font-size: 14px;
-            color: #78909c;
-            margin-top: 6px;
-        }
+  #container { position: fixed; inset: 0; display: none; }
+  #container video, #container canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover; }
 
-        /* AR Container (diisi MindAR) */
-        #ar-container {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #ar-container video,
-        #ar-container canvas {
-            display: block;
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-        }
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 32px;
+    background: radial-gradient(circle at 50% 30%, #142a33 0%, #0b0f14 70%);
+    color: #e7f6f8; text-align: center;
+  }
+  #overlay h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
+  #overlay p { font-size: 14px; line-height: 1.6; color: #9fb4bb; max-width: 340px; }
+  #overlay a { color: #22d3ee; text-decoration: underline; }
 
-        /* UI Overlay */
-        #ui-overlay {
-            position: fixed;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            z-index: 10;
-            display: flex;
-            justify-content: center;
-            pointer-events: none;
-            padding: 0 16px;
-        }
-        #ui-overlay>* {
-            pointer-events: auto;
-        }
+  #startBtn {
+    padding: 14px 32px; font-size: 15px; font-weight: 600;
+    background: #22d3ee; color: #06222a; border: none; border-radius: 999px;
+    cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 0 0 0 rgba(34,211,238,0.5);
+  }
+  #startBtn:active { transform: scale(0.96); }
+  #startBtn:hover { box-shadow: 0 0 24px 2px rgba(34,211,238,0.35); }
 
-        .btn-info {
-            background: rgba(10, 14, 30, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            cursor: pointer;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            transition: all 0.25s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            touch-action: manipulation;
-            user-select: none;
-        }
-        .btn-info:active {
-            transform: scale(0.94);
-            background: rgba(30, 40, 80, 0.85);
-        }
-        .btn-info svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-            flex-shrink: 0;
-        }
-
-        /* Panel Info */
-        #info-panel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.92);
-            z-index: 20;
-            background: rgba(10, 14, 30, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px;
-            padding: 32px 28px 28px;
-            max-width: 380px;
-            width: calc(100% - 32px);
-            color: #fff;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            pointer-events: none;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        #info-panel.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translate(-50%, -50%) scale(1);
-            pointer-events: auto;
-        }
-        #info-panel h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            letter-spacing: -0.3px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        #info-panel h2 .badge {
-            font-size: 12px;
-            background: rgba(79, 195, 247, 0.25);
-            color: #4fc3f7;
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-        #info-panel .subtitle {
-            color: #90a4ae;
-            font-size: 14px;
-            margin-bottom: 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            padding-bottom: 14px;
-        }
-        #info-panel .planet-row {
-            display: flex;
-            gap: 16px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        #info-panel .planet-card {
-            flex: 1;
-            min-width: 100px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 16px;
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        #info-panel .planet-card .name {
-            font-weight: 600;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #info-panel .planet-card .name .dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        #info-panel .planet-card .detail {
-            font-size: 13px;
-            color: #b0bec5;
-            margin-top: 4px;
-            line-height: 1.5;
-        }
-        #info-panel .close-btn {
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 50px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
-            touch-action: manipulation;
-        }
-        #info-panel .close-btn:active {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        /* Permission / Error */
-        #permission-msg {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 15;
-            background: rgba(200, 50, 50, 0.92);
-            backdrop-filter: blur(8px);
-            color: #fff;
-            padding: 14px 24px;
-            border-radius: 16px;
-            font-size: 14px;
-            font-weight: 500;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            display: none;
-            pointer-events: none;
-        }
-        #permission-msg.show {
-            display: block;
-        }
-        #permission-msg .retry {
-            pointer-events: auto;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: #fff;
-            padding: 6px 18px;
-            border-radius: 30px;
-            margin-left: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        /* Status kecil */
-        #status-tip {
-            position: fixed;
-            top: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 12;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 30px;
-            padding: 8px 20px;
-            color: #cfd8dc;
-            font-size: 13px;
-            font-weight: 400;
-            letter-spacing: 0.2px;
-            pointer-events: none;
-            transition: opacity 0.6s ease;
-            opacity: 0;
-            white-space: nowrap;
-        }
-        #status-tip.show {
-            opacity: 1;
-        }
-
-        /* Scroll panel */
-        #info-panel::-webkit-scrollbar {
-            width: 4px;
-        }
-        #info-panel::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #info-panel::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
-
-        /* Responsif HP */
-        @media (max-width: 480px) {
-            .btn-info {
-                padding: 12px 20px;
-                font-size: 14px;
-                border-radius: 40px;
-            }
-            #info-panel {
-                padding: 24px 20px 20px;
-                max-width: 340px;
-            }
-            #info-panel h2 {
-                font-size: 19px;
-            }
-            #info-panel .planet-card {
-                min-width: 80px;
-                padding: 12px 12px;
-            }
-            #info-panel .planet-card .detail {
-                font-size: 12px;
-            }
-            #loading-screen p {
-                font-size: 16px;
-            }
-            #status-tip {
-                font-size: 11px;
-                padding: 6px 14px;
-                top: 12px;
-            }
-        }
-        @media (max-width: 380px) {
-            #info-panel .planet-row {
-                flex-direction: column;
-            }
-            .btn-info {
-                padding: 10px 16px;
-                font-size: 13px;
-            }
-        }
-    </style>
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: none; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: linear-gradient(180deg, rgba(0,0,0,0.55), transparent);
+  }
+  #hud span { color: #fff; font-size: 13px; opacity: 0.85; }
+  #stopBtn {
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 999px; cursor: pointer; backdrop-filter: blur(4px);
+  }
+</style>
 </head>
 <body>
 
-    <!-- LOADING SCREEN -->
-    <div id="loading-screen">
-        <div class="loader-ring"></div>
-        <p>Memulai AR &hellip;</p>
-        <div class="sub">Silakan arahkan kamera ke marker</div>
-    </div>
+  <div id="overlay">
+    <h1>🔷 AR Sederhana</h1>
+    <p>
+      Demo image tracking pakai <strong>MindAR</strong> + <strong>Three.js</strong>.
+      Arahkan kamera ke gambar target di bawah ini, nanti muncul kubus 3D di atasnya.
+    </p>
+    <p>
+      Target: <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">buka/download gambar target</a>
+      — tampilkan di layar HP/laptop lain atau di-print.
+    </p>
+    <button id="startBtn">Mulai AR</button>
+    <p id="statusMsg" style="font-size:12px;color:#6f8890;"></p>
+  </div>
 
-    <!-- KONTAINER AR (MindAR) -->
-    <div id="ar-container"></div>
+  <div id="hud">
+    <span>Arahkan kamera ke gambar target…</span>
+    <button id="stopBtn">Stop</button>
+  </div>
 
-    <!-- STATUS TIP -->
-    <div id="status-tip">🔍 Cari marker Bumi</div>
+  <div id="container"></div>
 
-    <!-- PERMISSION ERROR -->
-    <div id="permission-msg">
-        ⚠️ Kamera tidak diizinkan.
-        <button class="retry" id="retry-cam">Coba Lagi</button>
-    </div>
+  <script type="module">
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const overlay = document.getElementById('overlay');
+    const hud = document.getElementById('hud');
+    const container = document.getElementById('container');
+    const statusMsg = document.getElementById('statusMsg');
 
-    <!-- UI OVERLAY -->
-    <div id="ui-overlay">
-        <button class="btn-info" id="btn-info">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            Info Planet
-        </button>
-    </div>
+    let mindarThree = null;
 
-    <!-- INFO PANEL -->
-    <div id="info-panel">
-        <h2>
-            🌌 Tata Surya Kecil
-            <span class="badge">AR</span>
-        </h2>
-        <div class="subtitle">Bumi &amp; Bulan dalam genggaman</div>
+    async function startAR() {
+      try {
+        statusMsg.textContent = 'Meminta izin kamera…';
+        const THREE = window.MINDAR.IMAGE.THREE;
 
-        <div class="planet-row">
-            <div class="planet-card">
-                <div class="name"><span class="dot" style="background:#4fc3f7;"></span> Bumi</div>
-                <div class="detail">Diameter ~12.742 km<br />Periode rotasi 24 jam</div>
-            </div>
-            <div class="planet-card">
-                <div class="name"><span class="dot" style="background:#bdbdbd;"></span> Bulan</div>
-                <div class="detail">Diameter ~3.474 km<br />Jarak ~384.400 km</div>
-            </div>
-        </div>
-        <div style="margin-top:14px;font-size:13px;color:#78909c;line-height:1.6;border-top:1px solid rgba(255,255,255,0.05);padding-top:14px;">
-            🌍 Bumi berputar perlahan &bull; 🌙 Bulan mengorbit
-        </div>
-        <button class="close-btn" id="close-info">Tutup</button>
-    </div>
-
-    <!-- ============ SCRIPTS (ES Module) ============ -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
-            }
-        }
-    </script>
-
-    <script type="module">
-        // --- 1. IMPORTS ---
-        import * as THREE from "three";
-        import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar-js@1.2.5/dist/mindar-image-three.prod.js";
-
-        // --- 2. DOM REFS ---
-        const loadingEl = document.getElementById('loading-screen');
-        const container = document.getElementById('ar-container');
-        const statusTip = document.getElementById('status-tip');
-        const permMsg = document.getElementById('permission-msg');
-        const retryBtn = document.getElementById('retry-cam');
-        const infoBtn = document.getElementById('btn-info');
-        const infoPanel = document.getElementById('info-panel');
-        const closeInfo = document.getElementById('close-info');
-
-        // --- 3. STATE ---
-        let mindarThree = null;
-        let earthMesh = null;
-        let moonMesh = null;
-        let moonGroup = null;
-        let targetFound = false;
-        let isRunning = false;
-        let animationId = null;
-        const clock = new THREE.Clock();
-
-        // --- 4. HELPERS ---
-        function showStatus(msg, show) {
-            statusTip.textContent = msg;
-            statusTip.classList.toggle('show', show);
-        }
-
-        function hideLoading() {
-            loadingEl.classList.add('hidden');
-        }
-
-        function showPermissionError() {
-            permMsg.classList.add('show');
-        }
-
-        function hidePermissionError() {
-            permMsg.classList.remove('show');
-        }
-
-        // --- 5. BUILD THREE.JS SCENE OBJECTS ---
-        function buildSceneObjects(scene) {
-            // --- Cahaya ---
-            const ambient = new THREE.AmbientLight(0x404060, 0.6);
-            scene.add(ambient);
-
-            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
-            dirLight.position.set(5, 8, 6);
-            dirLight.castShadow = false;
-            scene.add(dirLight);
-
-            const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
-            fillLight.position.set(-4, 2, -5);
-            scene.add(fillLight);
-
-            const rimLight = new THREE.DirectionalLight(0x88ddff, 0.3);
-            rimLight.position.set(-2, 5, 8);
-            scene.add(rimLight);
-
-            // --- Grup Bumi ---
-            const earthGroup = new THREE.Group();
-
-            // Bumi dengan texture
-            const geoEarth = new THREE.SphereGeometry(1, 48, 48);
-            const textureLoader = new THREE.TextureLoader();
-            const earthTex = textureLoader.load(
-                'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-                undefined,
-                undefined,
-                function(err) {
-                    console.warn('Texture Earth gagal load, pakai warna', err);
-                    if (earthMesh) {
-                        earthMesh.material.color.setHex(0x2196f3);
-                        earthMesh.material.map = null;
-                        earthMesh.material.needsUpdate = true;
-                    }
-                }
-            );
-            const matEarth = new THREE.MeshStandardMaterial({
-                map: earthTex,
-                roughness: 0.5,
-                metalness: 0.05,
-                emissive: new THREE.Color(0x112244),
-                emissiveIntensity: 0.08,
-            });
-            earthMesh = new THREE.Mesh(geoEarth, matEarth);
-            earthMesh.castShadow = false;
-            earthMesh.receiveShadow = false;
-            earthGroup.add(earthMesh);
-
-            // Atmosphere glow
-            const glowGeo = new THREE.SphereGeometry(1.03, 32, 32);
-            const glowMat = new THREE.MeshBasicMaterial({
-                color: 0x4fc3f7,
-                transparent: true,
-                opacity: 0.08,
-                side: THREE.BackSide,
-            });
-            const glow = new THREE.Mesh(glowGeo, glowMat);
-            earthGroup.add(glow);
-
-            scene.add(earthGroup);
-
-            // --- Bulan ---
-            moonGroup = new THREE.Group();
-            const geoMoon = new THREE.SphereGeometry(0.27, 24, 24);
-            const matMoon = new THREE.MeshStandardMaterial({
-                color: 0xcccccc,
-                roughness: 0.85,
-                metalness: 0.02,
-                emissive: new THREE.Color(0x222222),
-                emissiveIntensity: 0.05,
-            });
-            moonMesh = new THREE.Mesh(geoMoon, matMoon);
-            moonMesh.position.set(2.2, 0, 0);
-            moonGroup.add(moonMesh);
-            scene.add(moonGroup);
-
-            return { earthGroup, moonGroup };
-        }
-
-        // --- 6. INIT MINDS AR ---
-        async function initMindAR() {
-            try {
-                // Bersihkan container lama (jika ada)
-                while (container.firstChild) {
-                    container.removeChild(container.firstChild);
-                }
-
-                // Buat instance MindARThree
-                mindarThree = new MindARThree({
-                    container: container,
-                    imageTargetSrc: './targets.mind',
-                });
-
-                // Ambil renderer, scene, camera
-                const { renderer, scene, camera } = mindarThree;
-
-                // Konfigurasi renderer
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.setClearColor(0x000000, 0); // transparan
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.2;
-
-                // Bangun objek 3D
-                buildSceneObjects(scene);
-
-                // --- Event: target ditemukan ---
-                mindarThree.on('targetFound', () => {
-                    targetFound = true;
-                    showStatus('✅ Marker Bumi terdeteksi!', true);
-                    setTimeout(() => {
-                        if (targetFound) {
-                            showStatus('', false);
-                        }
-                    }, 4000);
-                });
-
-                mindarThree.on('targetLost', () => {
-                    targetFound = false;
-                    showStatus('🔍 Cari marker Bumi', true);
-                });
-
-                // --- Resize handler ---
-                window.addEventListener('resize', () => {
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    renderer.setSize(w, h);
-                    camera.aspect = w / h;
-                    camera.updateProjectionMatrix();
-                });
-
-                // --- Start kamera ---
-                await mindarThree.start();
-
-                // Sembunyikan loading
-                hideLoading();
-                showStatus('🔍 Cari marker Bumi', true);
-
-                isRunning = true;
-                animate();
-
-                return mindarThree;
-
-            } catch (err) {
-                console.error('MindAR init error:', err);
-                // Cek permission
-                if (err.message && (
-                        err.message.toLowerCase().includes('permission') ||
-                        err.message.toLowerCase().includes('notallowed') ||
-                        err.message.toLowerCase().includes('denied')
-                    )) {
-                    showPermissionError();
-                } else {
-                    // Tampilkan error di loading
-                    loadingEl.innerHTML = `
-                        <div style="color:#ef5350;font-size:28px;margin-bottom:12px;">⚠️</div>
-                        <p style="color:#ef9a9a;">Gagal memulai AR</p>
-                        <div class="sub" style="color:#b0bec5;max-width:280px;text-align:center;margin-top:8px;">
-                            ${err.message || 'Periksa koneksi dan izin kamera'}
-                        </div>
-                        <button onclick="location.reload()" style="margin-top:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 28px;border-radius:40px;font-size:15px;cursor:pointer;">
-                            Muat Ulang
-                        </button>
-                    `;
-                }
-                throw err;
-            }
-        }
-
-        // --- 7. ANIMATION LOOP ---
-        function animate() {
-            if (!isRunning) return;
-
-            animationId = requestAnimationFrame(animate);
-
-            const delta = clock.getDelta();
-            const elapsed = clock.getElapsedTime();
-
-            // Rotasi Bumi
-            if (earthMesh) {
-                earthMesh.rotation.y += delta * 0.25;
-            }
-
-            // Orbit Bulan
-            if (moonGroup && moonMesh) {
-                const orbitSpeed = 0.55;
-                const angle = elapsed * orbitSpeed;
-                const radius = 2.2;
-                const tilt = 0.09;
-                moonMesh.position.x = Math.cos(angle) * radius;
-                moonMesh.position.z = Math.sin(angle) * radius * Math.cos(tilt);
-                moonMesh.position.y = Math.sin(angle) * radius * Math.sin(tilt);
-                moonMesh.lookAt(0, 0, 0);
-            }
-
-            // Render via MindAR
-            if (mindarThree) {
-                mindarThree.render();
-            }
-        }
-
-        // --- 8. START AR ---
-        async function startAR() {
-            try {
-                hidePermissionError();
-                await initMindAR();
-            } catch (err) {
-                console.error('Start AR gagal:', err);
-            }
-        }
-
-        // --- 9. PERMISSION HANDLING ---
-        async function checkAndRequestCamera() {
-            try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Browser tidak mendukung kamera.');
-                }
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach(t => t.stop());
-                return true;
-            } catch (err) {
-                console.warn('Camera permission check:', err);
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showPermissionError();
-                }
-                return false;
-            }
-        }
-
-        // --- 10. UI EVENTS ---
-        infoBtn.addEventListener('click', () => {
-            infoPanel.classList.toggle('active');
+        mindarThree = new window.MINDAR.IMAGE.MindARThree({
+          container,
+          imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind",
         });
 
-        closeInfo.addEventListener('click', () => {
-            infoPanel.classList.remove('active');
+        const { renderer, scene, camera } = mindarThree;
+
+        // Pencahayaan biar kubus kelihatan bentuknya, bukan cuma siluet
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(0.5, 1, 0.5);
+        scene.add(dirLight);
+
+        // Anchor #0 nempel ke target image yang terdeteksi
+        const anchor = mindarThree.addAnchor(0);
+
+        const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+        const material = new THREE.MeshStandardMaterial({ color: 0x22d3ee, metalness: 0.2, roughness: 0.4 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(0, 0.16, 0);
+        anchor.group.add(cube);
+
+        overlay.style.display = 'none';
+        container.style.display = 'block';
+        hud.style.display = 'flex';
+
+        await mindarThree.start();
+
+        renderer.setAnimationLoop(() => {
+          cube.rotation.x += 0.01;
+          cube.rotation.y += 0.02;
+          renderer.render(scene, camera);
         });
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Gagal mengakses kamera. Pastikan halaman dibuka lewat HTTPS atau localhost, dan izin kamera diberikan.';
+      }
+    }
 
-        infoPanel.addEventListener('click', (e) => {
-            if (e.target === infoPanel) {
-                infoPanel.classList.remove('active');
-            }
-        });
+    async function stopAR() {
+      if (mindarThree) {
+        await mindarThree.stop();
+        mindarThree.renderer.setAnimationLoop(null);
+      }
+      container.style.display = 'none';
+      hud.style.display = 'none';
+      overlay.style.display = 'flex';
+      statusMsg.textContent = '';
+    }
 
-        retryBtn.addEventListener('click', async () => {
-            hidePermissionError();
-            // Reset
-            isRunning = false;
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            if (mindarThree) {
-                try {
-                    await mindarThree.stop();
-                } catch (e) { /* ignore */ }
-                mindarThree = null;
-            }
-            // Reset loading
-            loadingEl.classList.remove('hidden');
-            loadingEl.innerHTML = `
-                <div class="loader-ring"></div>
-                <p>Memulai ulang AR &hellip;</p>
-                <div class="sub">Mohon izinkan akses kamera</div>
-            `;
-            // Reset container
-            while (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
-            // Mulai ulang
-            await startAR();
-        });
-
-        // --- 11. CLEANUP ---
-        window.addEventListener('beforeunload', async () => {
-            isRunning = false;
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            if (mindarThree) {
-                try {
-                    await mindarThree.stop();
-                } catch (e) { /* ignore */ }
-            }
-            if (mindarThree && mindarThree.renderer) {
-                mindarThree.renderer.dispose();
-            }
-        });
-
-        // --- 12. BOOT ---
-        async function init() {
-            await checkAndRequestCamera();
-            await startAR();
-        }
-
-        init();
-
-        console.log('✅ WebAR ES Module siap!');
-    </script>
-
+    startBtn.addEventListener('click', startAR);
+    stopBtn.addEventListener('click', stopAR);
+  </script>
 </body>
 </html>
