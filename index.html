@@ -1,201 +1,530 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>AR Sederhana — MindAR + Three.js</title>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-    "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
-  }
-}
-</script>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; background: #0b0f14; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AR Bumi & Bulan — MindAR + Three.js</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: #0b0f14;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
 
-  #container { position: fixed; inset: 0; display: none; background: #000; overflow: hidden; }
-  #container video, #container canvas { position: absolute; }
+        #container {
+            position: fixed;
+            inset: 0;
+            display: none;
+            background: #000;
+            overflow: hidden;
+        }
+        #container video,
+        #container canvas {
+            position: absolute;
+        }
 
-  #overlay {
-    position: fixed; inset: 0; z-index: 10;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 18px; padding: 32px;
-    background: radial-gradient(circle at 50% 30%, #142a33 0%, #0b0f14 70%);
-    color: #e7f6f8; text-align: center;
-  }
-  #overlay h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
-  #overlay p { font-size: 14px; line-height: 1.6; color: #9fb4bb; max-width: 340px; }
-  #overlay a { color: #22d3ee; text-decoration: underline; }
+        #overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            padding: 32px;
+            background: radial-gradient(circle at 50% 30%, #142a33 0%, #0b0f14 70%);
+            color: #e7f6f8;
+            text-align: center;
+        }
+        #overlay h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        #overlay p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #9fb4bb;
+            max-width: 340px;
+        }
+        #overlay a {
+            color: #22d3ee;
+            text-decoration: underline;
+        }
 
-  #startBtn {
-    padding: 14px 32px; font-size: 15px; font-weight: 600;
-    background: #22d3ee; color: #06222a; border: none; border-radius: 999px;
-    cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 0 0 0 rgba(34,211,238,0.5);
-  }
-  #startBtn:active { transform: scale(0.96); }
-  #startBtn:hover { box-shadow: 0 0 24px 2px rgba(34,211,238,0.35); }
+        #startBtn {
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #22d3ee;
+            color: #06222a;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5);
+        }
+        #startBtn:active {
+            transform: scale(0.96);
+        }
+        #startBtn:hover {
+            box-shadow: 0 0 24px 2px rgba(34, 211, 238, 0.35);
+        }
 
-  #hud {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    display: none; align-items: center; justify-content: space-between;
-    padding: 14px 16px; background: linear-gradient(180deg, rgba(0,0,0,0.55), transparent);
-  }
-  #hud span { color: #fff; font-size: 13px; opacity: 0.85; }
-  #stopBtn {
-    padding: 8px 16px; font-size: 13px; font-weight: 600;
-    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 999px; cursor: pointer; backdrop-filter: blur(4px);
-  }
-</style>
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent);
+        }
+        #hud span {
+            color: #fff;
+            font-size: 13px;
+            opacity: 0.85;
+        }
+        #stopBtn {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 999px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        #loading-text {
+            font-size: 13px;
+            color: #6f8890;
+            margin-top: 4px;
+        }
+    </style>
 </head>
 <body>
 
-  <div id="overlay">
-    <h1>🔷 AR Sederhana</h1>
-    <p>
-      Demo image tracking pakai <strong>MindAR</strong> + <strong>Three.js</strong>.
-      Arahkan kamera ke gambar target di bawah ini, nanti muncul kubus 3D di atasnya.
-    </p>
-    <p>
-      Target: <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">buka/download gambar target</a>
-      — tampilkan di layar HP/laptop lain atau di-print.
-    </p>
-    <button id="startBtn">Mulai AR</button>
-    <p id="statusMsg" style="font-size:12px;color:#6f8890;"></p>
-  </div>
+    <div id="overlay">
+        <h1>🌍 Bumi & Bulan</h1>
+        <p>
+            AR <strong>Bumi</strong> dengan atmosfer berlapis + <strong>Bulan</strong> yang mengorbit.
+            Arahkan kamera ke gambar target di bawah ini.
+        </p>
+        <p>
+            Target: <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">buka/download gambar target</a>
+            — tampilkan di layar lain atau print.
+        </p>
+        <button id="startBtn">Mulai AR</button>
+        <div id="loading-text"></div>
+    </div>
 
-  <div id="hud">
-    <span>Arahkan kamera ke gambar target…</span>
-    <button id="stopBtn">Stop</button>
-  </div>
+    <div id="hud">
+        <span>🌍 Arahkan ke gambar target</span>
+        <button id="stopBtn">Stop</button>
+    </div>
 
-  <div id="container"></div>
+    <div id="container"></div>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { MindARThree } from 'mindar-image-three';
+    <script type="module">
+        import * as THREE from 'three';
+        import { MindARThree } from 'mindar-image-three';
 
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const overlay = document.getElementById('overlay');
-    const hud = document.getElementById('hud');
-    const container = document.getElementById('container');
-    const statusMsg = document.getElementById('statusMsg');
+        // --- DOM refs ---
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const overlay = document.getElementById('overlay');
+        const hud = document.getElementById('hud');
+        const container = document.getElementById('container');
+        const loadingText = document.getElementById('loading-text');
 
-    let mindarThree = null;
-    let fitRAF = null;
+        let mindarThree = null;
+        let fitRAF = null;
+        let earth = null;
+        let atmosphere = null;
+        let moon = null;
+        let moonAngle = 0;
+        let clock = new THREE.Clock();
 
-    // Bikin video & canvas selalu sinkron ukurannya, di-fit "contain"
-    // (seluruh frame kamera kelihatan, tidak ada yang kepotong).
-    function applyContainFit() {
-      const video = container.querySelector('video');
-      const canvas = container.querySelector('canvas');
-      if (!video || !canvas || !video.videoWidth) return false;
+        // --- Contain fit untuk video & canvas ---
+        function applyContainFit() {
+            const video = container.querySelector('video');
+            const canvas = container.querySelector('canvas');
+            if (!video || !canvas || !video.videoWidth) return false;
 
-      const cw = container.clientWidth;
-      const ch = container.clientHeight;
-      const videoRatio = video.videoWidth / video.videoHeight;
-      const containerRatio = cw / ch;
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const containerRatio = cw / ch;
 
-      let w, h;
-      if (videoRatio > containerRatio) {
-        w = cw;
-        h = cw / videoRatio;
-      } else {
-        h = ch;
-        w = ch * videoRatio;
-      }
-      const left = (cw - w) / 2;
-      const top = (ch - h) / 2;
+            let w, h;
+            if (videoRatio > containerRatio) {
+                w = cw;
+                h = cw / videoRatio;
+            } else {
+                h = ch;
+                w = ch * videoRatio;
+            }
+            const left = (cw - w) / 2;
+            const top = (ch - h) / 2;
 
-      [video, canvas].forEach((el) => {
-        el.style.width = `${w}px`;
-        el.style.height = `${h}px`;
-        el.style.left = `${left}px`;
-        el.style.top = `${top}px`;
-      });
-      return true;
-    }
+            [video, canvas].forEach((el) => {
+                el.style.width = `${w}px`;
+                el.style.height = `${h}px`;
+                el.style.left = `${left}px`;
+                el.style.top = `${top}px`;
+            });
+            return true;
+        }
 
-    // Nunggu video sudah punya dimensi asli sebelum ngitung fit
-    function waitAndFit() {
-      if (!applyContainFit()) {
-        fitRAF = requestAnimationFrame(waitAndFit);
-      }
-    }
+        function waitAndFit() {
+            if (!applyContainFit()) {
+                fitRAF = requestAnimationFrame(waitAndFit);
+            }
+        }
 
-    function onWindowResize() {
-      applyContainFit();
-    }
+        function onWindowResize() {
+            applyContainFit();
+        }
 
-    async function startAR() {
-      try {
-        statusMsg.textContent = 'Meminta izin kamera…';
+        // --- Shader atmosfer (fresnel glow) ---
+        const atmosphereVertexShader = `
+            varying vec3 vNormal;
+            varying vec3 vPositionW;
+            void main() {
+                vNormal   = normalize(normalMatrix * normal);
+                vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                vPositionW = worldPos.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
 
-        mindarThree = new MindARThree({
-          container,
-          imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind",
-        });
+        const atmosphereFragmentShader = `
+            varying vec3 vNormal;
+            varying vec3 vPositionW;
 
-        const { renderer, scene, camera } = mindarThree;
+            uniform vec3 glowColor;
+            uniform float intensity;
+            uniform float power;
 
-        // Pencahayaan biar kubus kelihatan bentuknya, bukan cuma siluet
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        dirLight.position.set(0.5, 1, 0.5);
-        scene.add(dirLight);
+            void main() {
+                vec3 viewDir = normalize(cameraPosition - vPositionW);
+                float rim = 1.0 - max(0.0, dot(viewDir, vNormal));
+                float glow = pow(rim, power) * intensity;
+                gl_FragColor = vec4(glowColor, glow * 0.85);
+            }
+        `;
 
-        // Anchor #0 nempel ke target image yang terdeteksi
-        const anchor = mindarThree.addAnchor(0);
+        // --- Buat tekstur Bulan secara prosedural (craters) ---
+        function createMoonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
 
-        const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-        const material = new THREE.MeshStandardMaterial({ color: 0x22d3ee, metalness: 0.2, roughness: 0.4 });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0.16, 0);
-        anchor.group.add(cube);
+            // Dasar abu-abu
+            const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+            gradient.addColorStop(0, '#d0d0d0');
+            gradient.addColorStop(0.5, '#b8b8b8');
+            gradient.addColorStop(1, '#8a8a8a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
 
-        overlay.style.display = 'none';
-        container.style.display = 'block';
-        hud.style.display = 'flex';
+            // Kawah
+            const craters = [
+                { x: 180, y: 150, r: 40, dark: 0.15 },
+                { x: 320, y: 200, r: 55, dark: 0.20 },
+                { x: 250, y: 320, r: 30, dark: 0.12 },
+                { x: 400, y: 350, r: 25, dark: 0.10 },
+                { x: 100, y: 380, r: 35, dark: 0.18 },
+                { x: 420, y: 120, r: 20, dark: 0.08 },
+                { x: 280, y: 80, r: 15, dark: 0.06 },
+                { x: 60, y: 220, r: 28, dark: 0.14 },
+                { x: 460, y: 280, r: 18, dark: 0.10 },
+                { x: 150, y: 450, r: 22, dark: 0.12 },
+                { x: 380, y: 440, r: 16, dark: 0.07 },
+                { x: 210, y: 250, r: 12, dark: 0.05 },
+                { x: 340, y: 300, r: 10, dark: 0.05 },
+                { x: 130, y: 300, r: 8, dark: 0.04 },
+                { x: 450, y: 60, r: 14, dark: 0.06 },
+            ];
 
-        await mindarThree.start();
+            for (const c of craters) {
+                // Lingkaran gelap (kawah)
+                const grad = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+                const base = 0.4 + c.dark * 1.2;
+                grad.addColorStop(0, `rgba(60,60,60,${0.5 + c.dark * 0.6})`);
+                grad.addColorStop(0.6, `rgba(80,80,80,${0.3 + c.dark * 0.4})`);
+                grad.addColorStop(1, `rgba(120,120,120,0)`);
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                ctx.fill();
 
-        // Terapkan fit "contain" (nunggu video siap dulu), lalu jaga tetap
-        // menyesuaikan tiap kali layar di-resize / rotasi.
-        waitAndFit();
-        window.addEventListener('resize', onWindowResize);
+                // Highlight (pinggiran kawah)
+                ctx.strokeStyle = `rgba(200,200,200,${0.08 + c.dark * 0.15})`;
+                ctx.lineWidth = 2 + c.dark * 3;
+                ctx.beginPath();
+                ctx.arc(c.x - c.r * 0.15, c.y - c.r * 0.15, c.r * 0.8, 0, Math.PI * 2);
+                ctx.stroke();
+            }
 
-        renderer.setAnimationLoop(() => {
-          cube.rotation.x += 0.01;
-          cube.rotation.y += 0.02;
-          renderer.render(scene, camera);
-        });
-      } catch (err) {
-        console.error(err);
-        statusMsg.textContent = 'Gagal mengakses kamera. Pastikan halaman dibuka lewat HTTPS atau localhost, dan izin kamera diberikan.';
-      }
-    }
+            // Bintik-bintik kecil
+            for (let i = 0; i < 300; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const r = 0.5 + Math.random() * 1.5;
+                const alpha = 0.05 + Math.random() * 0.1;
+                ctx.fillStyle = `rgba(80,80,80,${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
-    async function stopAR() {
-      window.removeEventListener('resize', onWindowResize);
-      if (fitRAF) cancelAnimationFrame(fitRAF);
-      if (mindarThree) {
-        await mindarThree.stop();
-        mindarThree.renderer.setAnimationLoop(null);
-      }
-      container.style.display = 'none';
-      hud.style.display = 'none';
-      overlay.style.display = 'flex';
-      statusMsg.textContent = '';
-    }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            return texture;
+        }
 
-    startBtn.addEventListener('click', startAR);
-    stopBtn.addEventListener('click', stopAR);
-  </script>
+        // --- Start AR ---
+        async function startAR() {
+            try {
+                loadingText.textContent = 'Meminta izin kamera…';
+
+                mindarThree = new MindARThree({
+                    container,
+                    imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind",
+                });
+
+                const { renderer, scene, camera } = mindarThree;
+
+                // Pencahayaan
+                const ambient = new THREE.AmbientLight(0x404060, 0.6);
+                scene.add(ambient);
+
+                const hemi = new THREE.HemisphereLight(0x87ceeb, 0x3a1c0a, 0.9);
+                scene.add(hemi);
+
+                const sun = new THREE.DirectionalLight(0xffeedd, 1.8);
+                sun.position.set(2, 3, 4);
+                scene.add(sun);
+
+                const fill = new THREE.DirectionalLight(0x4488ff, 0.4);
+                fill.position.set(-2, 0, -3);
+                scene.add(fill);
+
+                // --- Anchor target ---
+                const anchor = mindarThree.addAnchor(0);
+
+                // --- BUMI ---
+                const earthRadius = 0.3;
+                const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
+                const textureLoader = new THREE.TextureLoader();
+
+                // Pakai texture Bumi dari Three.js examples (reliable)
+                const earthMap = textureLoader.load(
+                    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+                    () => { loadingText.textContent = '✅ Bumi siap'; },
+                    undefined,
+                    () => { loadingText.textContent = '⚠️ Gagal muat texture Bumi, pakai warna'; }
+                );
+                const earthSpecularMap = textureLoader.load(
+                    'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg',
+                    undefined, undefined,
+                    () => { /* abaikan */ }
+                );
+                const earthNormalMap = textureLoader.load(
+                    'https://threejs.org/examples/textures/planets/earth_normal_2048.jpg',
+                    undefined, undefined,
+                    () => { /* abaikan */ }
+                );
+
+                const earthMat = new THREE.MeshPhongMaterial({
+                    map: earthMap,
+                    specularMap: earthSpecularMap,
+                    specular: new THREE.Color(0x333333),
+                    shininess: 15,
+                    normalMap: earthNormalMap,
+                    normalScale: new THREE.Vector2(1.2, 1.2),
+                });
+
+                earth = new THREE.Mesh(earthGeo, earthMat);
+                earth.rotation.x = 0.23;
+                earth.rotation.z = -0.1;
+                anchor.group.add(earth);
+
+                // --- ATMOSFER (glow) ---
+                const atmoRadius = earthRadius * 1.12;
+                const atmoGeo = new THREE.SphereGeometry(atmoRadius, 48, 48);
+                const atmoMat = new THREE.ShaderMaterial({
+                    vertexShader: atmosphereVertexShader,
+                    fragmentShader: atmosphereFragmentShader,
+                    uniforms: {
+                        glowColor: { value: new THREE.Color(0x4a8fe0) },
+                        intensity: { value: 1.2 },
+                        power: { value: 2.8 },
+                    },
+                    transparent: true,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                });
+                atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+                atmosphere.rotation.x = 0.23;
+                atmosphere.rotation.z = -0.1;
+                anchor.group.add(atmosphere);
+
+                // Lapisan atmosfer kedua (luar, lebih lembut)
+                const atmoOuterRadius = earthRadius * 1.28;
+                const atmoOuterGeo = new THREE.SphereGeometry(atmoOuterRadius, 36, 36);
+                const atmoOuterMat = new THREE.ShaderMaterial({
+                    vertexShader: atmosphereVertexShader,
+                    fragmentShader: atmosphereFragmentShader,
+                    uniforms: {
+                        glowColor: { value: new THREE.Color(0x88ccff) },
+                        intensity: { value: 0.5 },
+                        power: { value: 4.5 },
+                    },
+                    transparent: true,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                });
+                const atmosphereOuter = new THREE.Mesh(atmoOuterGeo, atmoOuterMat);
+                atmosphereOuter.rotation.x = 0.23;
+                atmosphereOuter.rotation.z = -0.1;
+                anchor.group.add(atmosphereOuter);
+
+                // --- BULAN ---
+                const moonRadius = 0.085;
+                const moonGeo = new THREE.SphereGeometry(moonRadius, 32, 32);
+                const moonTexture = createMoonTexture();
+                const moonMat = new THREE.MeshStandardMaterial({
+                    map: moonTexture,
+                    roughness: 0.85,
+                    metalness: 0.05,
+                    color: 0xdddddd,
+                });
+                moon = new THREE.Mesh(moonGeo, moonMat);
+                const orbitRadius = 0.65;
+                moon.position.set(orbitRadius, 0.08, 0);
+                anchor.group.add(moon);
+
+                // Tambahkan bintang-bintang kecil di sekitar (opsional)
+                const starsGroup = new THREE.Group();
+                const starGeo = new THREE.BufferGeometry();
+                const starCount = 300;
+                const positions = new Float32Array(starCount * 3);
+                for (let i = 0; i < starCount * 3; i++) {
+                    positions[i] = (Math.random() - 0.5) * 12;
+                }
+                starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const starMat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.005,
+                    transparent: true,
+                    opacity: 0.7,
+                    blending: THREE.AdditiveBlending,
+                });
+                const stars = new THREE.Points(starGeo, starMat);
+                stars.position.y = 1.5;
+                anchor.group.add(stars);
+
+                // --- Sembunyikan overlay, tampilkan container ---
+                overlay.style.display = 'none';
+                container.style.display = 'block';
+                hud.style.display = 'flex';
+
+                loadingText.textContent = '⏳ Menjalankan AR…';
+
+                await mindarThree.start();
+
+                waitAndFit();
+                window.addEventListener('resize', onWindowResize);
+
+                // --- Animasi loop ---
+                renderer.setAnimationLoop(() => {
+                    const delta = clock.getDelta();
+                    const elapsed = clock.getElapsedTime();
+
+                    // Rotasi Bumi
+                    if (earth) {
+                        earth.rotation.y += delta * 0.2;
+                        atmosphere.rotation.y += delta * 0.2;
+                        atmosphereOuter.rotation.y += delta * 0.18;
+                    }
+
+                    // Orbit Bulan
+                    if (moon) {
+                        moonAngle += delta * 0.6; // kecepatan orbit
+                        const r = orbitRadius;
+                        const tilt = 0.15;
+                        const x = Math.cos(moonAngle) * r;
+                        const z = Math.sin(moonAngle) * r;
+                        const y = Math.sin(moonAngle * 1.3) * tilt + 0.08;
+                        moon.position.set(x, y, z);
+
+                        // Rotasi Bulan pada sumbunya sendiri
+                        moon.rotation.y += delta * 0.08;
+                        moon.rotation.x += delta * 0.02;
+                    }
+
+                    // Rotasi bintang pelan
+                    stars.rotation.y += delta * 0.01;
+
+                    renderer.render(scene, camera);
+                });
+
+                loadingText.textContent = '✅ AR aktif — arahkan ke target';
+
+            } catch (err) {
+                console.error(err);
+                loadingText.textContent = '❌ Gagal akses kamera. Pastikan HTTPS/localhost & izin kamera.';
+            }
+        }
+
+        // --- Stop AR ---
+        async function stopAR() {
+            window.removeEventListener('resize', onWindowResize);
+            if (fitRAF) cancelAnimationFrame(fitRAF);
+            if (mindarThree) {
+                await mindarThree.stop();
+                mindarThree.renderer.setAnimationLoop(null);
+            }
+            container.style.display = 'none';
+            hud.style.display = 'none';
+            overlay.style.display = 'flex';
+            loadingText.textContent = '';
+            clock = new THREE.Clock();
+            moonAngle = 0;
+        }
+
+        // --- Event listeners ---
+        startBtn.addEventListener('click', startAR);
+        stopBtn.addEventListener('click', stopAR);
+    </script>
 </body>
 </html>
