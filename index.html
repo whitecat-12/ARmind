@@ -17,8 +17,8 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #0b0f14; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
 
-  #container { position: fixed; inset: 0; display: none; }
-  #container video, #container canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: cover; }
+  #container { position: fixed; inset: 0; display: none; background: #000; overflow: hidden; }
+  #container video, #container canvas { position: absolute; }
 
   #overlay {
     position: fixed; inset: 0; z-index: 10;
@@ -88,6 +88,50 @@
     const statusMsg = document.getElementById('statusMsg');
 
     let mindarThree = null;
+    let fitRAF = null;
+
+    // Bikin video & canvas selalu sinkron ukurannya, di-fit "contain"
+    // (seluruh frame kamera kelihatan, tidak ada yang kepotong).
+    function applyContainFit() {
+      const video = container.querySelector('video');
+      const canvas = container.querySelector('canvas');
+      if (!video || !canvas || !video.videoWidth) return false;
+
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+      const videoRatio = video.videoWidth / video.videoHeight;
+      const containerRatio = cw / ch;
+
+      let w, h;
+      if (videoRatio > containerRatio) {
+        w = cw;
+        h = cw / videoRatio;
+      } else {
+        h = ch;
+        w = ch * videoRatio;
+      }
+      const left = (cw - w) / 2;
+      const top = (ch - h) / 2;
+
+      [video, canvas].forEach((el) => {
+        el.style.width = `${w}px`;
+        el.style.height = `${h}px`;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+      });
+      return true;
+    }
+
+    // Nunggu video sudah punya dimensi asli sebelum ngitung fit
+    function waitAndFit() {
+      if (!applyContainFit()) {
+        fitRAF = requestAnimationFrame(waitAndFit);
+      }
+    }
+
+    function onWindowResize() {
+      applyContainFit();
+    }
 
     async function startAR() {
       try {
@@ -121,6 +165,11 @@
 
         await mindarThree.start();
 
+        // Terapkan fit "contain" (nunggu video siap dulu), lalu jaga tetap
+        // menyesuaikan tiap kali layar di-resize / rotasi.
+        waitAndFit();
+        window.addEventListener('resize', onWindowResize);
+
         renderer.setAnimationLoop(() => {
           cube.rotation.x += 0.01;
           cube.rotation.y += 0.02;
@@ -133,6 +182,8 @@
     }
 
     async function stopAR() {
+      window.removeEventListener('resize', onWindowResize);
+      if (fitRAF) cancelAnimationFrame(fitRAF);
       if (mindarThree) {
         await mindarThree.stop();
         mindarThree.renderer.setAnimationLoop(null);
