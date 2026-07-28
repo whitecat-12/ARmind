@@ -401,405 +401,359 @@
         <button class="close-btn" id="close-info">Tutup</button>
     </div>
 
-    <!-- ============ SCRIPTS ============ -->
-    <!-- Three.js r152 (compatible & ringan) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+    <!-- ============ SCRIPTS (ES Module) ============ -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.152.2/examples/jsm/"
+            }
+        }
     </script>
 
-    <!-- MindAR Image Tracking + Three.js integration (UMD) -->
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-three.prod.js">
-    </script>
+    <script type="module">
+        // --- 1. IMPORTS ---
+        import * as THREE from "three";
+        import { MindARThree } from "https://cdn.jsdelivr.net/npm/mind-ar-js@1.2.5/dist/mindar-image-three.prod.js";
 
-    <script>
-        (function() {
-            'use strict';
+        // --- 2. DOM REFS ---
+        const loadingEl = document.getElementById('loading-screen');
+        const container = document.getElementById('ar-container');
+        const statusTip = document.getElementById('status-tip');
+        const permMsg = document.getElementById('permission-msg');
+        const retryBtn = document.getElementById('retry-cam');
+        const infoBtn = document.getElementById('btn-info');
+        const infoPanel = document.getElementById('info-panel');
+        const closeInfo = document.getElementById('close-info');
 
-            // --- DOM refs ---
-            const loadingEl = document.getElementById('loading-screen');
-            const container = document.getElementById('ar-container');
-            const statusTip = document.getElementById('status-tip');
-            const permMsg = document.getElementById('permission-msg');
-            const retryBtn = document.getElementById('retry-cam');
-            const infoBtn = document.getElementById('btn-info');
-            const infoPanel = document.getElementById('info-panel');
-            const closeInfo = document.getElementById('close-info');
+        // --- 3. STATE ---
+        let mindarThree = null;
+        let earthMesh = null;
+        let moonMesh = null;
+        let moonGroup = null;
+        let targetFound = false;
+        let isRunning = false;
+        let animationId = null;
+        const clock = new THREE.Clock();
 
-            // --- State ---
-            let mindar = null;
-            let scene = null;
-            let camera = null;
-            let renderer = null;
-            let earthMesh = null;
-            let moonMesh = null;
-            let moonOrbit = null;
-            let isRunning = false;
-            let animationId = null;
-            let targetFound = false;
-            let clock = new THREE.Clock();
+        // --- 4. HELPERS ---
+        function showStatus(msg, show) {
+            statusTip.textContent = msg;
+            statusTip.classList.toggle('show', show);
+        }
 
-            // --- Helpers ---
-            function showStatus(msg, show) {
-                statusTip.textContent = msg;
-                statusTip.classList.toggle('show', show);
-            }
+        function hideLoading() {
+            loadingEl.classList.add('hidden');
+        }
 
-            function hideLoading() {
-                loadingEl.classList.add('hidden');
-            }
+        function showPermissionError() {
+            permMsg.classList.add('show');
+        }
 
-            function showPermissionError() {
-                permMsg.classList.add('show');
-            }
+        function hidePermissionError() {
+            permMsg.classList.remove('show');
+        }
 
-            function hidePermissionError() {
-                permMsg.classList.remove('show');
-            }
+        // --- 5. BUILD THREE.JS SCENE OBJECTS ---
+        function buildSceneObjects(scene) {
+            // --- Cahaya ---
+            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            scene.add(ambient);
 
-            // --- Inisialisasi Three.js Scene ---
-            function initThreeScene() {
-                // Scene
-                scene = new THREE.Scene();
+            const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+            dirLight.position.set(5, 8, 6);
+            dirLight.castShadow = false;
+            scene.add(dirLight);
 
-                // Kamera Three.js (akan di-override oleh MindAR)
-                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+            fillLight.position.set(-4, 2, -5);
+            scene.add(fillLight);
 
-                // Renderer
-                const pixelRatio = Math.min(window.devicePixelRatio, 2);
-                renderer = new THREE.WebGLRenderer({
-                    antialias: true,
-                    alpha: true,
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(pixelRatio);
-                renderer.setClearColor(0x000000, 0); // transparan
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.2;
-                container.prepend(renderer.domElement);
+            const rimLight = new THREE.DirectionalLight(0x88ddff, 0.3);
+            rimLight.position.set(-2, 5, 8);
+            scene.add(rimLight);
 
-                // --- Cahaya ---
-                const ambient = new THREE.AmbientLight(0x404060, 0.6);
-                scene.add(ambient);
+            // --- Grup Bumi ---
+            const earthGroup = new THREE.Group();
 
-                const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
-                dirLight.position.set(5, 8, 6);
-                dirLight.castShadow = false;
-                scene.add(dirLight);
-
-                const fillLight = new THREE.DirectionalLight(0x4488ff, 0.4);
-                fillLight.position.set(-4, 2, -5);
-                scene.add(fillLight);
-
-                // Rim light
-                const rimLight = new THREE.DirectionalLight(0x88ddff, 0.3);
-                rimLight.position.set(-2, 5, 8);
-                scene.add(rimLight);
-
-                // --- Objek Bumi ---
-                const earthGroup = new THREE.Group();
-
-                // Bumi dengan texture
-                const geoEarth = new THREE.SphereGeometry(1, 48, 48);
-                const textureLoader = new THREE.TextureLoader();
-                const earthTex = textureLoader.load(
-                    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-                    function() { /* selesai */ },
-                    undefined,
-                    function(err) {
-                        // Fallback jika texture gagal
-                        console.warn('Texture Earth gagal load, pakai warna', err);
+            // Bumi dengan texture
+            const geoEarth = new THREE.SphereGeometry(1, 48, 48);
+            const textureLoader = new THREE.TextureLoader();
+            const earthTex = textureLoader.load(
+                'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+                undefined,
+                undefined,
+                function(err) {
+                    console.warn('Texture Earth gagal load, pakai warna', err);
+                    if (earthMesh) {
                         earthMesh.material.color.setHex(0x2196f3);
                         earthMesh.material.map = null;
                         earthMesh.material.needsUpdate = true;
                     }
-                );
-                const matEarth = new THREE.MeshStandardMaterial({
-                    map: earthTex,
-                    roughness: 0.5,
-                    metalness: 0.05,
-                    emissive: new THREE.Color(0x112244),
-                    emissiveIntensity: 0.08,
+                }
+            );
+            const matEarth = new THREE.MeshStandardMaterial({
+                map: earthTex,
+                roughness: 0.5,
+                metalness: 0.05,
+                emissive: new THREE.Color(0x112244),
+                emissiveIntensity: 0.08,
+            });
+            earthMesh = new THREE.Mesh(geoEarth, matEarth);
+            earthMesh.castShadow = false;
+            earthMesh.receiveShadow = false;
+            earthGroup.add(earthMesh);
+
+            // Atmosphere glow
+            const glowGeo = new THREE.SphereGeometry(1.03, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0x4fc3f7,
+                transparent: true,
+                opacity: 0.08,
+                side: THREE.BackSide,
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            earthGroup.add(glow);
+
+            scene.add(earthGroup);
+
+            // --- Bulan ---
+            moonGroup = new THREE.Group();
+            const geoMoon = new THREE.SphereGeometry(0.27, 24, 24);
+            const matMoon = new THREE.MeshStandardMaterial({
+                color: 0xcccccc,
+                roughness: 0.85,
+                metalness: 0.02,
+                emissive: new THREE.Color(0x222222),
+                emissiveIntensity: 0.05,
+            });
+            moonMesh = new THREE.Mesh(geoMoon, matMoon);
+            moonMesh.position.set(2.2, 0, 0);
+            moonGroup.add(moonMesh);
+            scene.add(moonGroup);
+
+            return { earthGroup, moonGroup };
+        }
+
+        // --- 6. INIT MINDS AR ---
+        async function initMindAR() {
+            try {
+                // Bersihkan container lama (jika ada)
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                // Buat instance MindARThree
+                mindarThree = new MindARThree({
+                    container: container,
+                    imageTargetSrc: './targets.mind',
                 });
-                earthMesh = new THREE.Mesh(geoEarth, matEarth);
-                earthMesh.castShadow = false;
-                earthMesh.receiveShadow = false;
-                earthGroup.add(earthMesh);
 
-                // Atmosphere glow (optional)
-                const glowGeo = new THREE.SphereGeometry(1.03, 32, 32);
-                const glowMat = new THREE.MeshBasicMaterial({
-                    color: 0x4fc3f7,
-                    transparent: true,
-                    opacity: 0.08,
-                    side: THREE.BackSide,
+                // Ambil renderer, scene, camera
+                const { renderer, scene, camera } = mindarThree;
+
+                // Konfigurasi renderer
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.setClearColor(0x000000, 0); // transparan
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.2;
+
+                // Bangun objek 3D
+                buildSceneObjects(scene);
+
+                // --- Event: target ditemukan ---
+                mindarThree.on('targetFound', () => {
+                    targetFound = true;
+                    showStatus('✅ Marker Bumi terdeteksi!', true);
+                    setTimeout(() => {
+                        if (targetFound) {
+                            showStatus('', false);
+                        }
+                    }, 4000);
                 });
-                const glow = new THREE.Mesh(glowGeo, glowMat);
-                earthGroup.add(glow);
 
-                // --- Bulan ---
-                const moonGroup = new THREE.Group();
-                const geoMoon = new THREE.SphereGeometry(0.27, 24, 24);
-                const matMoon = new THREE.MeshStandardMaterial({
-                    color: 0xcccccc,
-                    roughness: 0.85,
-                    metalness: 0.02,
-                    emissive: new THREE.Color(0x222222),
-                    emissiveIntensity: 0.05,
+                mindarThree.on('targetLost', () => {
+                    targetFound = false;
+                    showStatus('🔍 Cari marker Bumi', true);
                 });
-                moonMesh = new THREE.Mesh(geoMoon, matMoon);
-                // Texture bulan sederhana (bisa ditambah jika mau)
-                moonMesh.position.set(2.2, 0, 0);
-                moonGroup.add(moonMesh);
-
-                // Tambahkan ke scene
-                scene.add(earthGroup);
-                scene.add(moonGroup);
-
-                // Simpan ref untuk animasi
-                moonOrbit = moonGroup;
 
                 // --- Resize handler ---
-                window.addEventListener('resize', function() {
-                    if (renderer) {
-                        const w = window.innerWidth;
-                        const h = window.innerHeight;
-                        renderer.setSize(w, h);
-                        if (camera) {
-                            camera.aspect = w / h;
-                            camera.updateProjectionMatrix();
-                        }
-                    }
+                window.addEventListener('resize', () => {
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    renderer.setSize(w, h);
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
                 });
 
-                return { scene, camera, renderer };
+                // --- Start kamera ---
+                await mindarThree.start();
+
+                // Sembunyikan loading
+                hideLoading();
+                showStatus('🔍 Cari marker Bumi', true);
+
+                isRunning = true;
+                animate();
+
+                return mindarThree;
+
+            } catch (err) {
+                console.error('MindAR init error:', err);
+                // Cek permission
+                if (err.message && (
+                        err.message.toLowerCase().includes('permission') ||
+                        err.message.toLowerCase().includes('notallowed') ||
+                        err.message.toLowerCase().includes('denied')
+                    )) {
+                    showPermissionError();
+                } else {
+                    // Tampilkan error di loading
+                    loadingEl.innerHTML = `
+                        <div style="color:#ef5350;font-size:28px;margin-bottom:12px;">⚠️</div>
+                        <p style="color:#ef9a9a;">Gagal memulai AR</p>
+                        <div class="sub" style="color:#b0bec5;max-width:280px;text-align:center;margin-top:8px;">
+                            ${err.message || 'Periksa koneksi dan izin kamera'}
+                        </div>
+                        <button onclick="location.reload()" style="margin-top:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 28px;border-radius:40px;font-size:15px;cursor:pointer;">
+                            Muat Ulang
+                        </button>
+                    `;
+                }
+                throw err;
+            }
+        }
+
+        // --- 7. ANIMATION LOOP ---
+        function animate() {
+            if (!isRunning) return;
+
+            animationId = requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const elapsed = clock.getElapsedTime();
+
+            // Rotasi Bumi
+            if (earthMesh) {
+                earthMesh.rotation.y += delta * 0.25;
             }
 
-            // --- Setup MindAR ---
-            async function setupMindAR() {
-                try {
-                    // Cek apakah MindAR global tersedia
-                    const MindAR = window.MindAR || window.MindARThree;
-                    if (!MindAR) {
-                        throw new Error('MindAR library tidak ditemukan. Periksa koneksi CDN.');
-                    }
-
-                    // Gunakan MindARThree.ImageTarget atau MindAR.ImageTarget
-                    const ImageTarget = MindAR.ImageTarget || MindARThree?.ImageTarget;
-                    if (!ImageTarget) {
-                        throw new Error('MindAR ImageTarget tidak tersedia.');
-                    }
-
-                    // Inisialisasi MindAR
-                    mindar = new ImageTarget({
-                        container: container,
-                        imageTargetSrc: 'targets.mind',
-                        maxTrack: 1,
-                        uiLoading: false,
-                        uiScanning: false,
-                        uiError: false,
-                        filterMinCF: 0.01,
-                        filterBeta: 0.01,
-                    });
-
-                    // Event: target ditemukan
-                    mindar.on('targetFound', function(e) {
-                        targetFound = true;
-                        showStatus('✅ Marker Bumi terdeteksi!', true);
-                        // Sembunyikan tip setelah beberapa detik
-                        setTimeout(function() {
-                            if (targetFound) {
-                                showStatus('', false);
-                            }
-                        }, 4000);
-                    });
-
-                    mindar.on('targetLost', function(e) {
-                        targetFound = false;
-                        showStatus('🔍 Cari marker Bumi', true);
-                    });
-
-                    // Mulai kamera
-                    await mindar.start();
-
-                    // Setup Three.js setelah MindAR start
-                    const threeData = initThreeScene();
-                    scene = threeData.scene;
-                    camera = threeData.camera;
-                    renderer = threeData.renderer;
-
-                    // Hubungkan MindAR dengan Three.js
-                    mindar.setThree(camera, renderer);
-
-                    // Sembunyikan loading
-                    hideLoading();
-                    showStatus('🔍 Cari marker Bumi', true);
-
-                    isRunning = true;
-                    animate();
-
-                    return mindar;
-
-                } catch (err) {
-                    console.error('MindAR init error:', err);
-                    // Cek apakah error karena permission
-                    if (err.message && err.message.toLowerCase().includes('permission')) {
-                        showPermissionError();
-                    } else {
-                        // Tampilkan error di loading
-                        loadingEl.innerHTML = `
-                            <div style="color:#ef5350;font-size:28px;margin-bottom:12px;">⚠️</div>
-                            <p style="color:#ef9a9a;">Gagal memulai AR</p>
-                            <div class="sub" style="color:#b0bec5;max-width:280px;text-align:center;margin-top:8px;">
-                                ${err.message || 'Periksa koneksi dan izin kamera'}
-                            </div>
-                            <button onclick="location.reload()" style="margin-top:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 28px;border-radius:40px;font-size:15px;cursor:pointer;">
-                                Muat Ulang
-                            </button>
-                        `;
-                    }
-                    throw err;
-                }
+            // Orbit Bulan
+            if (moonGroup && moonMesh) {
+                const orbitSpeed = 0.55;
+                const angle = elapsed * orbitSpeed;
+                const radius = 2.2;
+                const tilt = 0.09;
+                moonMesh.position.x = Math.cos(angle) * radius;
+                moonMesh.position.z = Math.sin(angle) * radius * Math.cos(tilt);
+                moonMesh.position.y = Math.sin(angle) * radius * Math.sin(tilt);
+                moonMesh.lookAt(0, 0, 0);
             }
 
-            // --- Animation Loop ---
-            function animate() {
-                if (!isRunning) return;
-
-                animationId = requestAnimationFrame(animate);
-
-                const delta = clock.getDelta();
-                const elapsed = clock.getElapsedTime();
-
-                // Rotasi Bumi
-                if (earthMesh) {
-                    earthMesh.rotation.y += delta * 0.25;
-                }
-
-                // Orbit Bulan
-                if (moonOrbit && moonMesh) {
-                    const orbitSpeed = 0.55;
-                    const angle = elapsed * orbitSpeed;
-                    // Bulan mengorbit di bidang miring sedikit (5 deg)
-                    const radius = 2.2;
-                    const tilt = 0.09;
-                    moonMesh.position.x = Math.cos(angle) * radius;
-                    moonMesh.position.z = Math.sin(angle) * radius * Math.cos(tilt);
-                    moonMesh.position.y = Math.sin(angle) * radius * Math.sin(tilt);
-                    // Bulan selalu menghadap ke Bumi (opsional)
-                    moonMesh.lookAt(0, 0, 0);
-                }
-
-                // Render via MindAR (yang akan handle kamera AR)
-                if (mindar && mindar.render) {
-                    mindar.render();
-                } else if (renderer && scene && camera) {
-                    // Fallback jika mindar.render tidak ada
-                    renderer.render(scene, camera);
-                }
+            // Render via MindAR
+            if (mindarThree) {
+                mindarThree.render();
             }
+        }
 
-            // --- Start ---
-            async function startAR() {
-                try {
-                    hidePermissionError();
-                    await setupMindAR();
-                } catch (err) {
-                    console.error('Start AR gagal:', err);
-                    // jika belum ditangani oleh setupMindAR
-                }
-            }
-
-            // --- Permission handling ---
-            async function checkAndRequestCamera() {
-                try {
-                    // Cek apakah browser mendukung getUserMedia
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        throw new Error('Browser tidak mendukung kamera.');
-                    }
-                    // Coba akses kamera (untuk memicu permission)
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    stream.getTracks().forEach(t => t.stop());
-                    return true;
-                } catch (err) {
-                    console.warn('Camera permission check:', err);
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        showPermissionError();
-                    } else {
-                        // Error lain, tetap coba jalankan MindAR
-                        // (MindAR akan handle sendiri)
-                    }
-                    return false;
-                }
-            }
-
-            // --- UI Events ---
-            infoBtn.addEventListener('click', function() {
-                infoPanel.classList.toggle('active');
-            });
-
-            closeInfo.addEventListener('click', function() {
-                infoPanel.classList.remove('active');
-            });
-
-            // Tutup panel jika klik di luar
-            infoPanel.addEventListener('click', function(e) {
-                if (e.target === infoPanel) {
-                    infoPanel.classList.remove('active');
-                }
-            });
-
-            retryBtn.addEventListener('click', function() {
+        // --- 8. START AR ---
+        async function startAR() {
+            try {
                 hidePermissionError();
-                // Reset dan coba lagi
-                if (mindar) {
-                    try { mindar.stop(); } catch (e) {}
-                    mindar = null;
-                }
-                isRunning = false;
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
-                }
-                // Hapus renderer lama
-                if (renderer && renderer.domElement && renderer.domElement.parentNode) {
-                    renderer.domElement.parentNode.removeChild(renderer.domElement);
-                }
-                // Reset loading
-                loadingEl.classList.remove('hidden');
-                loadingEl.innerHTML = `
-                    <div class="loader-ring"></div>
-                    <p>Memulai ulang AR &hellip;</p>
-                    <div class="sub">Mohon izinkan akses kamera</div>
-                `;
-                startAR();
-            });
-
-            // --- Inisialisasi ---
-            async function init() {
-                // Cek permission dulu
-                const hasPerm = await checkAndRequestCamera();
-                // Tetap lanjutkan, MindAR akan handle permission lebih lanjut
-                startAR();
+                await initMindAR();
+            } catch (err) {
+                console.error('Start AR gagal:', err);
             }
+        }
 
-            // --- Handle unload ---
-            window.addEventListener('beforeunload', function() {
-                isRunning = false;
-                if (animationId) {
-                    cancelAnimationFrame(animationId);
-                    animationId = null;
+        // --- 9. PERMISSION HANDLING ---
+        async function checkAndRequestCamera() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Browser tidak mendukung kamera.');
                 }
-                if (mindar) {
-                    try { mindar.stop(); } catch (e) {}
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(t => t.stop());
+                return true;
+            } catch (err) {
+                console.warn('Camera permission check:', err);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showPermissionError();
                 }
-                if (renderer) {
-                    renderer.dispose();
-                }
-            });
+                return false;
+            }
+        }
 
-            // --- Mulai ---
-            init();
+        // --- 10. UI EVENTS ---
+        infoBtn.addEventListener('click', () => {
+            infoPanel.classList.toggle('active');
+        });
 
-        })();
+        closeInfo.addEventListener('click', () => {
+            infoPanel.classList.remove('active');
+        });
+
+        infoPanel.addEventListener('click', (e) => {
+            if (e.target === infoPanel) {
+                infoPanel.classList.remove('active');
+            }
+        });
+
+        retryBtn.addEventListener('click', async () => {
+            hidePermissionError();
+            // Reset
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            if (mindarThree) {
+                try {
+                    await mindarThree.stop();
+                } catch (e) { /* ignore */ }
+                mindarThree = null;
+            }
+            // Reset loading
+            loadingEl.classList.remove('hidden');
+            loadingEl.innerHTML = `
+                <div class="loader-ring"></div>
+                <p>Memulai ulang AR &hellip;</p>
+                <div class="sub">Mohon izinkan akses kamera</div>
+            `;
+            // Reset container
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            // Mulai ulang
+            await startAR();
+        });
+
+        // --- 11. CLEANUP ---
+        window.addEventListener('beforeunload', async () => {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            if (mindarThree) {
+                try {
+                    await mindarThree.stop();
+                } catch (e) { /* ignore */ }
+            }
+            if (mindarThree && mindarThree.renderer) {
+                mindarThree.renderer.dispose();
+            }
+        });
+
+        // --- 12. BOOT ---
+        async function init() {
+            await checkAndRequestCamera();
+            await startAR();
+        }
+
+        init();
+
+        console.log('✅ WebAR ES Module siap!');
     </script>
 
 </body>
