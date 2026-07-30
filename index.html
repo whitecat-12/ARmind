@@ -3,419 +3,1812 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AR Bumi & Bulan — MindAR + Three.js</title>
+    <title>🚀 Nanay Astro — Tata Surya</title>
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- Three.js Import Map -->
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
-                "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
+
     <style>
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
-        html,
+
+        :root {
+            --bg-primary: #06080f;
+            --bg-card: rgba(255, 255, 255, 0.045);
+            --bg-card-hover: rgba(255, 255, 255, 0.075);
+            --border-card: rgba(255, 255, 255, 0.06);
+            --border-card-hover: rgba(255, 255, 255, 0.12);
+            --text-primary: #f0f4ff;
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --text-muted: rgba(255, 255, 255, 0.2);
+            --glow-gold: #f9d976;
+            --glow-blue: #4d8bf7;
+            --glow-orange: #f39f86;
+            --glow-cyan: #7ec8e3;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --radius-card: 20px;
+            --radius-sm: 14px;
+            --transition-smooth: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
         body {
-            height: 100%;
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
             overflow: hidden;
-            background: #0b0f14;
-            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        #container {
+        /* ============================================================
+           THREE.JS CANVAS
+           ============================================================ */
+        #three-container {
             position: fixed;
-            inset: 0;
-            display: none;
-            background: #000;
-            overflow: hidden;
-        }
-        #container video,
-        #container canvas {
-            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: auto;
         }
 
-        #overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 18px;
-            padding: 32px;
-            background: radial-gradient(circle at 50% 30%, #0f2027 0%, #0b0f14 70%);
-            color: #e7f6f8;
-            text-align: center;
-        }
-        #overlay h1 {
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #22d3ee, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        #overlay p {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #9fb4bb;
-            max-width: 340px;
-        }
-        #overlay a {
-            color: #22d3ee;
-            text-decoration: underline;
-        }
-        #overlay .target-hint {
-            background: rgba(34, 211, 238, 0.08);
-            border: 1px dashed rgba(34, 211, 238, 0.25);
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 13px;
-            max-width: 320px;
-        }
-
-        #startBtn {
-            padding: 14px 36px;
-            font-size: 16px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #22d3ee, #0891b2);
-            color: #06222a;
-            border: none;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.2s ease;
-            box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4);
-        }
-        #startBtn:active {
-            transform: scale(0.96);
-        }
-        #startBtn:hover {
-            box-shadow: 0 0 32px 4px rgba(34, 211, 238, 0.3);
-        }
-
-        #statusMsg {
-            font-size: 12px;
-            color: #6f8890;
-            min-height: 20px;
-        }
-
-        #hud {
+        /* ============================================================
+           DASHBOARD SCROLL
+           ============================================================ */
+        .dashboard-scroll {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 20;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+            bottom: 0;
+            z-index: 10;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 16px 140px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            background: transparent;
             pointer-events: none;
-        }
-        #hud span {
-            color: #fff;
-            font-size: 13px;
-            opacity: 0.85;
-            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-        }
-        #stopBtn {
-            pointer-events: auto;
-            padding: 8px 18px;
-            font-size: 13px;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 999px;
-            cursor: pointer;
-            backdrop-filter: blur(6px);
-            transition: background 0.2s;
-        }
-        #stopBtn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transform: scale(0.96);
         }
 
-        @media (max-width: 480px) {
-            #overlay h1 {
+        .dashboard-scroll.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .dashboard-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+        .dashboard-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dashboard-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }
+
+        /* ============================================================
+           TOP APP BAR — tanpa tombol sama sekali
+           ============================================================ */
+        .app-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 4px 12px;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            backdrop-filter: blur(20px) saturate(1.2);
+            -webkit-backdrop-filter: blur(20px) saturate(1.2);
+            background: rgba(6, 8, 15, 0.55);
+            margin: 0 -16px;
+            padding-left: 16px;
+            padding-right: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-bar .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-bar .left .brand {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+            text-align: center;
+            width: 100%;
+        }
+
+        .app-bar .left .brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #f9d976 0%, #f39f86 60%, #f9d976 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmerText 4s ease-in-out infinite;
+        }
+
+        @keyframes shimmerText {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .app-bar .left .brand span {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.15);
+            font-weight: 400;
+            letter-spacing: 0.6px;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ============================================================
+           SECTION HEADER
+           ============================================================ */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0 12px;
+        }
+
+        .section-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header h3 i {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* ============================================================
+           PLANET CARDS — GRID penuh dengan href
+           ============================================================ */
+        .planet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+            gap: 10px;
+            padding: 4px 2px 14px;
+        }
+
+        .planet-card-mini {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px) saturate(1.05);
+            -webkit-backdrop-filter: blur(12px) saturate(1.05);
+            border-radius: var(--radius-sm);
+            padding: 14px 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            touch-action: manipulation;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .planet-card-mini::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .planet-card-mini:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .planet-card-mini:active {
+            transform: scale(0.94);
+        }
+
+        .planet-card-mini .p-icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 4px;
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.04));
+            transition: var(--transition-smooth);
+            line-height: 1.2;
+        }
+
+        .planet-card-mini:hover .p-icon {
+            transform: scale(1.1) rotate(-4deg);
+        }
+
+        .planet-card-mini .p-name {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.2px;
+        }
+
+        .planet-card-mini .p-badge {
+            font-size: 7px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.6px;
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        .planet-card-mini.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.05), var(--shadow-card);
+            transform: translateY(-2px);
+        }
+
+        .planet-card-mini.active .p-icon {
+            filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.12));
+        }
+
+        /* ============================================================
+           FEATURED CARD — FAKTA HARIAN (kutipan astronomi)
+           ============================================================ */
+        .featured-card {
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(20px) saturate(1.1);
+            -webkit-backdrop-filter: blur(20px) saturate(1.1);
+            border-radius: var(--radius-card);
+            padding: 20px 18px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: 6px 0 14px;
+            transition: var(--transition-smooth);
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .featured-card::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(249, 217, 118, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .featured-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 16px 56px rgba(0, 0, 0, 0.5);
+        }
+
+        .featured-card .fc-quote-icon {
+            font-size: 28px;
+            color: var(--text-muted);
+            opacity: 0.3;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .featured-card .fc-quote {
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            position: relative;
+            z-index: 1;
+            font-style: italic;
+            letter-spacing: 0.2px;
+        }
+
+        .featured-card .fc-quote-author {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--glow-gold);
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .featured-card .fc-quote-author i {
+            font-size: 10px;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        .featured-card .fc-quote-date {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 0.5px;
+        }
+
+        .featured-card .fc-link {
+            display: inline-block;
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 4px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            transition: var(--transition-smooth);
+            position: relative;
+            z-index: 1;
+            align-self: flex-start;
+        }
+
+        .featured-card .fc-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .featured-card .fc-link i {
+            margin-left: 6px;
+            font-size: 10px;
+        }
+
+        /* ============================================================
+           EXPLORE VIEW — full screen immersive
+           ============================================================ */
+        .explore-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 15;
+            pointer-events: auto;
+            opacity: 1;
+            transition: opacity 0.6s ease;
+            background: transparent;
+        }
+
+        .explore-view.hidden {
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .explore-view .explore-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 18px 20px 14px;
+            background: linear-gradient(180deg, rgba(6, 8, 15, 0.75) 40%, transparent);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .explore-view .explore-header>* {
+            pointer-events: auto;
+        }
+
+        .explore-view .explore-header .ex-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .explore-view .explore-header .ex-title i {
+            font-size: 20px;
+            color: #f9d976;
+            filter: drop-shadow(0 0 16px rgba(249, 217, 118, 0.15));
+        }
+
+        .explore-view .explore-header .ex-title h2 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #fff;
+        }
+
+        .explore-view .explore-header .ex-title span {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-left: 4px;
+        }
+
+        .explore-view .explore-header .ex-close {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .explore-view .explore-header .ex-close:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.6);
+            transform: rotate(90deg);
+        }
+
+        .explore-view .explore-header .ex-close:active {
+            transform: scale(0.90) rotate(90deg);
+        }
+
+        .explore-view .explore-hint {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.8px;
+            font-weight: 300;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 18px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .explore-view .explore-hint i {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .explore-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 12px;
+            border-radius: 16px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .explore-label.sun-label {
+            color: #f9d976;
+            font-weight: 600;
+            background: rgba(249, 217, 118, 0.08);
+            border-color: rgba(249, 217, 118, 0.08);
+        }
+
+        /* ============================================================
+           BOTTOM NAV — Dashboard di kiri, Explore di kanan
+           ============================================================ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: rgba(6, 8, 15, 0.85);
+            backdrop-filter: blur(28px) saturate(1.2);
+            -webkit-backdrop-filter: blur(28px) saturate(1.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 6px 8px env(safe-area-inset-bottom, 8px);
+            padding-bottom: max(6px, env(safe-area-inset-bottom, 8px));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .bottom-nav.hidden {
+            transform: translateY(100%);
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            padding: 4px 8px;
+            min-width: 48px;
+            transition: var(--transition-smooth);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            border-radius: 12px;
+        }
+
+        .nav-btn:hover {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.92);
+        }
+
+        .nav-btn .nav-icon {
+            font-size: 18px;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .nav-btn .nav-label {
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            opacity: 0.4;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-btn.active .nav-label {
+            opacity: 1;
+            color: #fff;
+        }
+
+        .nav-btn .nav-dot {
+            position: absolute;
+            top: -2px;
+            right: -6px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #f9d976;
+            opacity: 0;
+            transition: var(--transition-smooth);
+            box-shadow: 0 0 12px rgba(249, 217, 118, 0.2);
+        }
+
+        .nav-btn.active .nav-dot {
+            opacity: 1;
+        }
+
+        .nav-btn[data-tab="dashboard"] .nav-icon {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        .nav-btn[data-tab="dashboard"].active .nav-icon {
+            color: #f9d976;
+        }
+        .nav-btn[data-tab="explore"] .nav-icon {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        .nav-btn[data-tab="explore"].active .nav-icon {
+            color: #4d8bf7;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (min-width: 600px) {
+            .dashboard-scroll {
+                padding: 0 40px 150px;
+            }
+            .app-bar {
+                padding-left: 40px;
+                padding-right: 40px;
+                margin: 0 -40px;
+            }
+            .planet-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 14px;
+            }
+            .planet-card-mini {
+                padding: 16px 12px;
+            }
+            .planet-card-mini .p-icon {
+                font-size: 34px;
+            }
+            .bottom-nav {
+                padding: 8px 20px env(safe-area-inset-bottom, 12px);
+                gap: 60px;
+            }
+            .nav-btn {
+                min-width: 60px;
+                padding: 6px 14px;
+            }
+            .nav-btn .nav-label {
+                font-size: 9px;
+            }
+            .explore-view .explore-header .ex-title h2 {
+                font-size: 20px;
+            }
+            .explore-view .explore-header {
+                padding: 22px 32px 16px;
+            }
+            .explore-label {
+                font-size: 12px;
+                padding: 3px 14px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .featured-card .fc-quote {
+                font-size: 15px;
+            }
+            .featured-card .fc-quote-author {
+                font-size: 12px;
+            }
+            .planet-grid {
+                grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+                gap: 8px;
+            }
+            .planet-card-mini {
+                padding: 10px 6px;
+            }
+            .planet-card-mini .p-icon {
                 font-size: 22px;
             }
-            #overlay p {
+            .planet-card-mini .p-name {
+                font-size: 9px;
+            }
+            .app-bar .left .brand h1 {
+                font-size: 15px;
+            }
+            .app-bar .left .brand span {
+                font-size: 9px;
+            }
+            .nav-btn {
+                min-width: 36px;
+                padding: 2px 4px;
+            }
+            .nav-btn .nav-icon {
+                font-size: 15px;
+            }
+            .nav-btn .nav-label {
+                font-size: 7px;
+            }
+            .explore-view .explore-header .ex-title h2 {
+                font-size: 14px;
+            }
+            .explore-view .explore-header .ex-close {
+                width: 32px;
+                height: 32px;
                 font-size: 13px;
             }
-            #startBtn {
-                padding: 12px 28px;
-                font-size: 15px;
+            .explore-view .explore-hint {
+                font-size: 9px;
+                padding: 4px 12px;
+                bottom: 80px;
+            }
+            .explore-label {
+                font-size: 8px;
+                padding: 1px 8px;
+            }
+            .bottom-nav {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .featured-card .fc-quote {
+                font-size: 13px;
+            }
+        }
+
+        /* ============================================================
+           LOADING / SPLASH SCREEN — "Nanay Astro"
+           ============================================================ */
+        #loading {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #06080f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
+        }
+
+        #loading .splash-icon {
+            font-size: 60px;
+            background: linear-gradient(135deg, #f9d976, #f39f86);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: floatIcon 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(249, 217, 118, 0.15));
+        }
+        @keyframes floatIcon {
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.05);
+            }
+        }
+
+        #loading .splash-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f9d976 0%, #f39f86 60%, #f9d976 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmerText 3s ease-in-out infinite;
+            text-shadow: 0 0 60px rgba(249, 217, 118, 0.05);
+        }
+
+        #loading .splash-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.15);
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: -8px;
+        }
+
+        #loading .spinner {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.04);
+            border-top-color: #f9d976;
+            animation: spin 0.9s linear infinite;
+            box-shadow: 0 0 40px rgba(249, 217, 118, 0.03);
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loading .loading-dots {
+            display: flex;
+            gap: 6px;
+            margin-top: -5px;
+        }
+        #loading .loading-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            animation: dotPulse 1.4s ease-in-out infinite both;
+        }
+        #loading .loading-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        #loading .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        #loading .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes dotPulse {
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.3;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ============================================================
+           RESPONSIVE LOADING
+           ============================================================ */
+        @media (max-width: 420px) {
+            #loading .splash-title {
+                font-size: 24px;
+            }
+            #loading .splash-icon {
+                font-size: 44px;
+            }
+            #loading .splash-sub {
+                font-size: 11px;
+                letter-spacing: 3px;
+            }
+            #loading .spinner {
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <h1>🌍 Bumi &amp; Bulan</h1>
-        <p>
-            AR <strong>Image Tracking</strong> dengan MindAR + Three.js.<br>
-            Arahkan kamera ke gambar target, dan lihat Bumi serta Bulan muncul di atasnya.
-        </p>
-        <div class="target-hint">
-            🎯 Target: <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">buka/download gambar target</a>
-            — tampilkan di layar lain atau cetak.
+    <!-- ===== LOADING / SPLASH SCREEN ===== -->
+    <div id="loading">
+        <div class="splash-icon"><i class="fas fa-rocket"></i></div>
+        <div class="splash-title">Nanay Astro</div>
+        <div class="splash-sub">Menjelajah Tata Surya</div>
+        <div class="spinner"></div>
+        <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
-        <button id="startBtn">🚀 Mulai AR</button>
-        <p id="statusMsg"></p>
     </div>
 
-    <div id="hud">
-        <span>🌍 Cari gambar target…</span>
-        <button id="stopBtn">✕ Stop</button>
+    <!-- ===== THREE.JS CANVAS ===== -->
+    <div id="three-container"></div>
+
+    <!-- ===== EXPLORE VIEW — hidden saat awal ===== -->
+    <div class="explore-view hidden" id="exploreView">
+        <div class="explore-header">
+            <div class="ex-title">
+                <i class="fas fa-rocket"></i>
+                <h2>Jelajahi<span> 3D</span></h2>
+            </div>
+            <button class="ex-close" id="exploreClose" aria-label="Buka Dashboard">
+                <i class="fas fa-th-large"></i>
+            </button>
+        </div>
+        <div class="explore-hint">
+            <i class="fas fa-hand-pointer" style="margin-right:6px;"></i> Geser · tap planet untuk info
+        </div>
+        <div id="exploreLabels" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:hidden;"></div>
     </div>
 
-    <div id="container"></div>
+    <!-- ===== DASHBOARD SCROLL — visible saat awal ===== -->
+    <div class="dashboard-scroll visible" id="dashboardScroll">
 
+        <header class="app-bar">
+            <div class="left">
+                <div class="brand">
+                    <h1>Dashboard</h1>
+                    <span>Tata Surya · 3D</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="section-header">
+            <h3><i class="fas fa-globe"></i> Semua Planet</h3>
+            <span style="font-size:9px;color:var(--text-muted);font-weight:400;">klik kartu untuk buka halaman</span>
+        </div>
+
+        <div class="planet-grid" id="planetGrid"></div>
+
+        <div class="section-header" style="margin-top:4px;">
+            <h3><i class="fas fa-star"></i> Fakta Harian</h3>
+            <span style="font-size:9px;color:var(--text-muted);font-weight:400;">kutipan astronomi</span>
+        </div>
+        <div class="featured-card" id="featuredCard"></div>
+
+        <div style="height:20px;"></div>
+    </div>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <nav class="bottom-nav" id="bottomNav">
+        <button class="nav-btn active" data-tab="dashboard">
+            <span class="nav-icon"><i class="fas fa-th-large"></i><span class="nav-dot"></span></span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-tab="explore">
+            <span class="nav-icon"><i class="fas fa-rocket"></i><span class="nav-dot"></span></span>
+            <span class="nav-label">Explore</span>
+        </button>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- MAIN SCRIPT -->
+    <!-- ============================================================ -->
     <script type="module">
+        // ============================================================
+        //  IMPORTS
+        // ============================================================
         import * as THREE from 'three';
-        import { MindARThree } from 'mindar-image-three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-        // ─── DOM refs ───────────────────────────────────────────────
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const overlay = document.getElementById('overlay');
-        const hud = document.getElementById('hud');
-        const container = document.getElementById('container');
-        const statusMsg = document.getElementById('statusMsg');
+        // ============================================================
+        //  PLANET DATA
+        // ============================================================
+        const PLANET_DATA = [{
+            id: 'matahari',
+            name: 'Matahari',
+            faIcon: 'fa-sun',
+            badge: 'Bintang',
+            color: 0xf9d976,
+            colorHex: '#f9d976',
+            size: 3.6,
+            orbitRadius: 0,
+            speed: 0,
+            tilt: 0
+        }, {
+            id: 'merkurius',
+            name: 'Merkurius',
+            faIcon: 'fa-circle',
+            badge: 'Terdekat',
+            color: 0xb0b0b0,
+            colorHex: '#b0b0b0',
+            size: 0.5,
+            orbitRadius: 7,
+            speed: 0.035,
+            tilt: 0.03
+        }, {
+            id: 'venus',
+            name: 'Venus',
+            faIcon: 'fa-venus',
+            badge: 'Terpanas',
+            color: 0xe8cda0,
+            colorHex: '#e8cda0',
+            size: 0.9,
+            orbitRadius: 10.5,
+            speed: 0.025,
+            tilt: 2.64
+        }, {
+            id: 'bumi',
+            name: 'Bumi',
+            faIcon: 'fa-earth-americas',
+            badge: 'Rumah Kita',
+            color: 0x4d8bf7,
+            colorHex: '#4d8bf7',
+            size: 1.0,
+            orbitRadius: 14,
+            speed: 0.02,
+            tilt: 0.41
+        }, {
+            id: 'mars',
+            name: 'Mars',
+            faIcon: 'fa-mars',
+            badge: 'Planet Merah',
+            color: 0xc1440e,
+            colorHex: '#c1440e',
+            size: 0.7,
+            orbitRadius: 17.5,
+            speed: 0.016,
+            tilt: 0.44
+        }, {
+            id: 'jupiter',
+            name: 'Jupiter',
+            faIcon: 'fa-circle',
+            badge: 'Terbesar',
+            color: 0xd4a574,
+            colorHex: '#d4a574',
+            size: 2.2,
+            orbitRadius: 22.5,
+            speed: 0.009,
+            tilt: 0.05
+        }, {
+            id: 'saturnus',
+            name: 'Saturnus',
+            faIcon: 'fa-ring',
+            badge: 'Bercincin',
+            color: 0xead6b8,
+            colorHex: '#ead6b8',
+            size: 1.8,
+            orbitRadius: 28.5,
+            speed: 0.007,
+            tilt: 0.47
+        }, {
+            id: 'uranus',
+            name: 'Uranus',
+            faIcon: 'fa-circle',
+            badge: 'Miring',
+            color: 0x7ec8e3,
+            colorHex: '#7ec8e3',
+            size: 1.2,
+            orbitRadius: 34.5,
+            speed: 0.005,
+            tilt: 1.71
+        }, {
+            id: 'neptunus',
+            name: 'Neptunus',
+            faIcon: 'fa-circle',
+            badge: 'Terjauh',
+            color: 0x3b4c9c,
+            colorHex: '#3b4c9c',
+            size: 1.1,
+            orbitRadius: 40,
+            speed: 0.004,
+            tilt: 0.49
+        }];
 
-        let mindarThree = null;
-        let fitRAF = null;
-        let earthMesh = null;
-        let orbitGroup = null;
+        // ============================================================
+        //  FAKTA HARIAN — kutipan dari para ilmuwan & astronom
+        // ============================================================
+        const QUOTES = [
+            { quote: "Kita semua debu bintang. Atom-atom dalam tubuh kita berasal dari ledakan bintang-bintang dahulu kala.", author: "Carl Sagan", source: "Astronom" },
+            { quote: "Ruang angkasa tidak jauh. Hanya satu jam perjalanan dengan mobil jika mobil Anda bisa melaju lurus ke atas.", author: "Fred Hoyle", source: "Astronom" },
+            { quote: "Bumi adalah panggung yang sangat kecil di tengah luasnya alam semesta.", author: "Carl Sagan", source: "Cosmos" },
+            { quote: "Matahari adalah bintang biasa di galaksi biasa, tetapi bagi kita ia adalah segalanya.", author: "Neil deGrasse Tyson", source: "Astrofisikawan" },
+            { quote: "Kita terbuat dari materi bintang. Kita adalah cara alam semesta untuk mengenal dirinya sendiri.", author: "Carl Sagan", source: "Astronom" },
+            { quote: "Semakin jauh kita melihat ke luar angkasa, semakin jauh kita melihat ke masa lalu.", author: "Stephen Hawking", source: "Fisikawan" },
+            { quote: "Bumi adalah satu-satunya dunia yang diketahui mampu menopang kehidupan. Tidak ada tempat lain, setidaknya dalam waktu dekat, yang dapat dituju oleh umat manusia.", author: "Carl Sagan", source: "Astronom" },
+            { quote: "Kita hidup di planet yang berputar mengelilingi bintang di pinggiran galaksi yang berputar di antara miliaran galaksi lainnya.", author: "Brian Cox", source: "Fisikawan" },
+            { quote: "Alam semesta tidak wajib selaras dengan kemauan manusia.", author: "Neil deGrasse Tyson", source: "Astrofisikawan" },
+            { quote: "Semua bintang yang pernah diamati manusia adalah tetangga terdekat kita di alam semesta.", author: "Chris Hadfield", source: "Astronot" },
+            { quote: "Planet Bumi hanyalah sebuah titik biru pucat di tengah luasnya kosmos.", author: "Carl Sagan", source: "Pale Blue Dot" },
+            { quote: "Setiap atom dalam tubuh kita pernah menjadi bagian dari bintang yang meledak.", author: "Lawrence Krauss", source: "Fisikawan" }
+        ];
 
-        // ─── Fit "contain" untuk video & canvas ───────────────────
-        function applyContainFit() {
-            const video = container.querySelector('video');
-            const canvas = container.querySelector('canvas');
-            if (!video || !canvas || !video.videoWidth) return false;
+        // ============================================================
+        //  URL MAPPING untuk href
+        // ============================================================
+        const URL_MAP = {
+            'matahari': 'matahari.html',
+            'merkurius': 'merkury.html',
+            'venus': 'venus.html',
+            'bumi': 'bumi.html',
+            'mars': 'mars.html',
+            'jupiter': 'jupiter.html',
+            'saturnus': 'saturnus.html',
+            'uranus': 'uranus.html',
+            'neptunus': 'neptunus.html'
+        };
 
-            const cw = container.clientWidth;
-            const ch = container.clientHeight;
-            const videoRatio = video.videoWidth / video.videoHeight;
-            const containerRatio = cw / ch;
+        // ============================================================
+        //  THREE.JS SETUP
+        // ============================================================
+        const container = document.getElementById('three-container');
+        const scene = new THREE.Scene();
 
-            let w, h;
-            if (videoRatio > containerRatio) {
-                w = cw;
-                h = cw / videoRatio;
-            } else {
-                h = ch;
-                w = ch * videoRatio;
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 800);
+        camera.position.set(0, 50, 80);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: false,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.minDistance = 5;
+        controls.maxDistance = 120;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        // ============================================================
+        //  POST-PROCESSING
+        // ============================================================
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.25, 0.15, 0.08
+        );
+        composer.addPass(bloomPass);
+
+        // ============================================================
+        //  LIGHTING
+        // ============================================================
+        scene.add(new THREE.AmbientLight(0x222244, 0.5));
+        const sunLight = new THREE.PointLight(0xffeedd, 2.5, 0, 0);
+        sunLight.position.set(0, 0, 0);
+        scene.add(sunLight);
+        const fillLight = new THREE.DirectionalLight(0x4466aa, 0.3);
+        fillLight.position.set(1, 1, 1);
+        scene.add(fillLight);
+
+        // ============================================================
+        //  STARFIELD
+        // ============================================================
+        const starsCount = 4500;
+        const starPos = new Float32Array(starsCount * 3);
+        const starSizes = new Float32Array(starsCount);
+        const starColors = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount; i++) {
+            const r = 200 + Math.random() * 350;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i * 3 + 1] = r * Math.cos(phi);
+            starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+            starSizes[i] = 0.4 + Math.random() * 1.8;
+            const c = 0.5 + Math.random() * 0.5;
+            starColors[i * 3] = c;
+            starColors[i * 3 + 1] = c;
+            starColors[i * 3 + 2] = c + Math.random() * 0.2;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        starGeo.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        const starMat = new THREE.PointsMaterial({
+            size: 1.0,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            sizeAttenuation: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+
+        // ============================================================
+        //  ORBIT PATHS
+        // ============================================================
+        function createOrbitPath(radius, color = 0xffffff, opacity = 0.04) {
+            const pts = [];
+            for (let i = 0; i <= 64; i++) {
+                const a = (i / 64) * Math.PI * 2;
+                pts.push(new THREE.Vector3(radius * Math.cos(a), 0, radius * Math.sin(a)));
             }
-            const left = (cw - w) / 2;
-            const top = (ch - h) / 2;
+            const g = new THREE.BufferGeometry().setFromPoints(pts);
+            const m = new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+            return new THREE.Line(g, m);
+        }
 
-            [video, canvas].forEach((el) => {
-                el.style.width = `${w}px`;
-                el.style.height = `${h}px`;
-                el.style.left = `${left}px`;
-                el.style.top = `${top}px`;
+        // ============================================================
+        //  CREATE SUN
+        // ============================================================
+        function createSun() {
+            const g = new THREE.Group();
+            const geo = new THREE.SphereGeometry(3.6, 48, 48);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xf9d976,
+                emissive: 0xf9a822,
+                emissiveIntensity: 2.2,
+                roughness: 0.1,
+                metalness: 0,
             });
-            return true;
+            g.add(new THREE.Mesh(geo, mat));
+            const g1 = new THREE.SphereGeometry(4.2, 32, 32);
+            const m1 = new THREE.MeshBasicMaterial({ color: 0xf9d976, transparent: true, opacity: 0.07,
+                blending: THREE.AdditiveBlending, depthWrite: false });
+            g.add(new THREE.Mesh(g1, m1));
+            const g2 = new THREE.SphereGeometry(5.2, 32, 32);
+            const m2 = new THREE.MeshBasicMaterial({ color: 0xf9a822, transparent: true, opacity: 0.03,
+                blending: THREE.AdditiveBlending, depthWrite: false });
+            g.add(new THREE.Mesh(g2, m2));
+            return g;
         }
 
-        function waitAndFit() {
-            if (!applyContainFit()) {
-                fitRAF = requestAnimationFrame(waitAndFit);
-            }
-        }
-
-        function onWindowResize() {
-            applyContainFit();
-        }
-
-        // ─── Texture loader dengan fallback ───────────────────────
-        const textureLoader = new THREE.TextureLoader();
-
-        function loadTextureWithFallback(url, fallbackColor) {
-            return new Promise((resolve) => {
-                textureLoader.load(
-                    url,
-                    (tex) => resolve(tex),
-                    undefined,
-                    () => {
-                        // fallback: buat texture solid
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 64;
-                        canvas.height = 64;
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = fallbackColor || '#888';
-                        ctx.fillRect(0, 0, 64, 64);
-                        const fallbackTex = new THREE.CanvasTexture(canvas);
-                        resolve(fallbackTex);
-                    }
-                );
+        // ============================================================
+        //  CREATE PLANET
+        // ============================================================
+        function createPlanet(data) {
+            const g = new THREE.Group();
+            const geo = new THREE.SphereGeometry(data.size, 32, 32);
+            const mat = new THREE.MeshStandardMaterial({
+                color: data.color,
+                roughness: 0.6,
+                metalness: 0.1,
+                emissive: data.color,
+                emissiveIntensity: 0.04,
             });
-        }
+            g.add(new THREE.Mesh(geo, mat));
+            if (data.tilt) g.rotation.z = data.tilt;
 
-        // ─── Start AR ──────────────────────────────────────────────
-        async function startAR() {
-            try {
-                statusMsg.textContent = '⏳ Meminta izin kamera…';
-
-                mindarThree = new MindARThree({
-                    container,
-                    imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind",
-                });
-
-                const { renderer, scene, camera } = mindarThree;
-
-                // ─── Pencahayaan ───────────────────────────────────
-                const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3a3a3a, 1.4);
-                scene.add(hemiLight);
-
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-                dirLight.position.set(1, 2, 1);
-                scene.add(dirLight);
-
-                const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
-                fillLight.position.set(-0.8, 0.6, -0.5);
-                scene.add(fillLight);
-
-                // ─── Anchor target ─────────────────────────────────
-                const anchor = mindarThree.addAnchor(0);
-
-                // ─── Load textures ─────────────────────────────────
-                statusMsg.textContent = '⏳ Memuat tekstur Bumi & Bulan…';
-
-                const [earthTex, moonTex] = await Promise.all([
-                    loadTextureWithFallback(
-                        'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
-                        '#2d7d9a'
-                    ),
-                    loadTextureWithFallback(
-                        'https://threejs.org/examples/textures/planets/moon_1024.jpg',
-                        '#b0b0b0'
-                    ),
-                ]);
-
-                // ─── Bumi (dengan kemiringan sumbu 23.5°) ─────────
-                const earthGroup = new THREE.Group();
-                earthGroup.rotation.x = 0.41; // ~23.5°
-                anchor.group.add(earthGroup);
-
-                const earthGeo = new THREE.SphereGeometry(0.22, 64, 64);
-                const earthMat = new THREE.MeshStandardMaterial({
-                    map: earthTex,
-                    roughness: 0.5,
-                    metalness: 0.05,
-                });
-                earthMesh = new THREE.Mesh(earthGeo, earthMat);
-                earthGroup.add(earthMesh);
-
-                // ─── Atmosphere glow (lapisan tipis) ──────────────
-                const glowGeo = new THREE.SphereGeometry(0.235, 48, 48);
-                const glowMat = new THREE.MeshBasicMaterial({
-                    color: 0x4da6ff,
+            if (data.id === 'saturnus') {
+                const r1 = new THREE.TorusGeometry(data.size * 1.8, 0.04, 32, 80);
+                const rm1 = new THREE.MeshStandardMaterial({
+                    color: 0xead6b8,
+                    roughness: 0.6,
+                    metalness: 0.1,
                     transparent: true,
-                    opacity: 0.13,
-                    side: THREE.BackSide,
+                    opacity: 0.7,
+                    side: THREE.DoubleSide
                 });
-                const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-                earthGroup.add(glowMesh);
+                const ring = new THREE.Mesh(r1, rm1);
+                ring.rotation.x = Math.PI / 2.2;
+                ring.rotation.z = 0.2;
+                g.add(ring);
 
-                // ─── Bulan ──────────────────────────────────────────
-                // Orbit group dengan sedikit kemiringan (5°)
-                orbitGroup = new THREE.Group();
-                orbitGroup.rotation.x = 0.09;
-                orbitGroup.rotation.z = 0.04;
-                anchor.group.add(orbitGroup);
+                const r2 = new THREE.TorusGeometry(data.size * 1.4, 0.025, 32, 80);
+                const rm2 = new THREE.MeshStandardMaterial({
+                    color: 0xd4b896,
+                    roughness: 0.6,
+                    metalness: 0.1,
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const ring2 = new THREE.Mesh(r2, rm2);
+                ring2.rotation.x = Math.PI / 2.2;
+                ring2.rotation.z = 0.2;
+                g.add(ring2);
 
-                const moonGeo = new THREE.SphereGeometry(0.055, 32, 32);
-                const moonMat = new THREE.MeshStandardMaterial({
-                    map: moonTex,
-                    roughness: 0.9,
+                const r3 = new THREE.TorusGeometry(data.size * 2.1, 0.02, 32, 80);
+                const rm3 = new THREE.MeshStandardMaterial({
+                    color: 0xc8b89a,
+                    roughness: 0.7,
                     metalness: 0.0,
-                });
-                const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-                moonMesh.position.set(0.42, 0, 0);
-                orbitGroup.add(moonMesh);
-
-                // ─── Tambahan: bintang-bintang kecil di sekitar ──
-                // (opsional, hanya untuk estetika)
-                const starGeo = new THREE.BufferGeometry();
-                const starCount = 160;
-                const starPos = new Float32Array(starCount * 3);
-                for (let i = 0; i < starCount * 3; i++) {
-                    starPos[i] = (Math.random() - 0.5) * 2.8;
-                }
-                starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-                const starMat = new THREE.PointsMaterial({
-                    color: 0xffffff,
-                    size: 0.005,
                     transparent: true,
-                    opacity: 0.6,
-                    sizeAttenuation: true,
+                    opacity: 0.25,
+                    side: THREE.DoubleSide
                 });
-                const stars = new THREE.Points(starGeo, starMat);
-                stars.position.y = 0.15;
-                anchor.group.add(stars);
+                const ring3 = new THREE.Mesh(r3, rm3);
+                ring3.rotation.x = Math.PI / 2.2;
+                ring3.rotation.z = 0.2;
+                g.add(ring3);
+            }
 
-                // ─── Tampilkan AR ──────────────────────────────────
-                overlay.style.display = 'none';
-                container.style.display = 'block';
-                hud.style.display = 'flex';
+            const gg = new THREE.SphereGeometry(data.size * 1.2, 16, 16);
+            const gm = new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.05,
+                blending: THREE.AdditiveBlending, depthWrite: false });
+            g.add(new THREE.Mesh(gg, gm));
+            return g;
+        }
 
-                await mindarThree.start();
+        // ============================================================
+        //  BUILD SOLAR SYSTEM
+        // ============================================================
+        const planets = {};
+        const planetMeshes = [];
 
-                waitAndFit();
-                window.addEventListener('resize', onWindowResize);
+        PLANET_DATA.forEach((data) => {
+            if (data.id === 'matahari') {
+                const sg = createSun();
+                scene.add(sg);
+                planets[data.id] = { group: sg, data, angle: 0 };
+                const mainMesh = sg.children[0];
+                if (mainMesh) planetMeshes.push({ mesh: mainMesh, id: data.id });
+                return;
+            }
+            const orbit = createOrbitPath(data.orbitRadius, data.color, 0.04);
+            scene.add(orbit);
+            const orbitGroup = new THREE.Group();
+            scene.add(orbitGroup);
+            const pg = createPlanet(data);
+            pg.position.x = data.orbitRadius;
+            orbitGroup.add(pg);
+            planets[data.id] = { group: pg, data, orbitGroup, angle: Math.random() * Math.PI * 2 };
+            const mesh = pg.children[0];
+            if (mesh) planetMeshes.push({ mesh, id: data.id });
+        });
 
-                // ─── Animasi loop ──────────────────────────────────
-                renderer.setAnimationLoop(() => {
-                    // Bumi berotasi pada sumbunya
-                    if (earthMesh) earthMesh.rotation.y += 0.004;
+        // ============================================================
+        //  UI REFS
+        // ============================================================
+        const dashboardScroll = document.getElementById('dashboardScroll');
+        const exploreView = document.getElementById('exploreView');
+        const exploreClose = document.getElementById('exploreClose');
+        const exploreLabels = document.getElementById('exploreLabels');
+        const planetGrid = document.getElementById('planetGrid');
+        const featuredCard = document.getElementById('featuredCard');
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const bottomNav = document.getElementById('bottomNav');
 
-                    // Bulan mengorbit
-                    if (orbitGroup) orbitGroup.rotation.y += 0.012;
+        let currentPlanetId = 'bumi';
+        let isAutoRotate = true;
+        let currentView = 'dashboard';
+        let isExploreActive = false;
+        let labelInterval = null;
 
-                    // Bintang berputar pelan
-                    stars.rotation.y += 0.0004;
+        // ============================================================
+        //  LABEL UPDATE (Explore view)
+        // ============================================================
+        function updateExploreLabels() {
+            const container = exploreLabels;
+            container.innerHTML = '';
+            const labelData = PLANET_DATA.map(p => {
+                let pos = new THREE.Vector3(0, 0, 0);
+                if (p.id === 'matahari') {
+                    pos.set(0, 0, 0);
+                } else {
+                    const planet = planets[p.id];
+                    if (planet && planet.orbitGroup) {
+                        const wp = new THREE.Vector3();
+                        planet.group.getWorldPosition(wp);
+                        pos.copy(wp);
+                    } else {
+                        pos.set(p.orbitRadius || 0, 0, 0);
+                    }
+                }
+                return { ...p, position: pos };
+            });
 
-                    renderer.render(scene, camera);
+            const halfWidth = window.innerWidth / 2;
+            const halfHeight = window.innerHeight / 2;
+
+            const emojiMap = {
+                'matahari': '☀️',
+                'merkurius': '☿',
+                'venus': '♀',
+                'bumi': '🌍',
+                'mars': '♂',
+                'jupiter': '♃',
+                'saturnus': '🪐',
+                'uranus': '⛢',
+                'neptunus': '♆'
+            };
+
+            labelData.forEach((p) => {
+                const vec = p.position.clone();
+                vec.project(camera);
+                const x = (vec.x * halfWidth) + halfWidth;
+                const y = -(vec.y * halfHeight) + halfHeight;
+                if (vec.z > 1) return;
+                const label = document.createElement('div');
+                label.className = `explore-label${p.id === 'matahari' ? ' sun-label' : ''}`;
+                label.textContent = (emojiMap[p.id] || '●') + ' ' + p.name;
+                label.style.position = 'absolute';
+                label.style.left = x + 'px';
+                label.style.top = y + 'px';
+                label.style.transform = 'translate(-50%, -50%)';
+                label.style.pointerEvents = 'none';
+                container.appendChild(label);
+            });
+        }
+
+        // ============================================================
+        //  RENDER PLANET GRID
+        // ============================================================
+        function renderPlanetGrid() {
+            planetGrid.innerHTML = '';
+            PLANET_DATA.forEach((data) => {
+                const card = document.createElement('a');
+                card.href = URL_MAP[data.id] || `${data.id}.html`;
+                card.className = `planet-card-mini${data.id === currentPlanetId ? ' active' : ''}`;
+                card.dataset.id = data.id;
+                card.innerHTML = `
+                    <i class="fas ${data.faIcon} p-icon" style="color:${data.colorHex};"></i>
+                    <div class="p-name">${data.name}</div>
+                    <div class="p-badge">${data.badge}</div>
+                `;
+                card.title = `Buka halaman ${data.name}`;
+                planetGrid.appendChild(card);
+            });
+        }
+
+        // ============================================================
+        //  RENDER FAKTA HARIAN
+        // ============================================================
+        function renderDailyFact() {
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            const index = dayOfYear % QUOTES.length;
+            const fact = QUOTES[index];
+
+            const dateStr = today.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            featuredCard.innerHTML = `
+                <div class="fc-quote-icon"><i class="fas fa-quote-left"></i></div>
+                <div class="fc-quote">"${fact.quote}"</div>
+                <div class="fc-quote-author">
+                    <i class="fas fa-user-astronaut"></i>
+                    ${fact.author}
+                    <span style="font-size:10px;color:var(--text-muted);font-weight:300;font-style:normal;">
+                        — ${fact.source}
+                    </span>
+                </div>
+                <div class="fc-quote-date">
+                    <i class="fas fa-calendar-alt" style="margin-right:6px;font-size:9px;"></i>
+                    ${dateStr}
+                </div>
+                <a href="#" class="fc-link" id="refreshFact">
+                    <i class="fas fa-sync-alt"></i> Fakta lainnya
+                </a>
+            `;
+
+            const refreshBtn = document.getElementById('refreshFact');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const newIndex = Math.floor(Math.random() * QUOTES.length);
+                    const newFact = QUOTES[newIndex];
+                    const newDate = new Date().toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    featuredCard.innerHTML = `
+                        <div class="fc-quote-icon"><i class="fas fa-quote-left"></i></div>
+                        <div class="fc-quote">"${newFact.quote}"</div>
+                        <div class="fc-quote-author">
+                            <i class="fas fa-user-astronaut"></i>
+                            ${newFact.author}
+                            <span style="font-size:10px;color:var(--text-muted);font-weight:300;font-style:normal;">
+                                — ${newFact.source}
+                            </span>
+                        </div>
+                        <div class="fc-quote-date">
+                            <i class="fas fa-calendar-alt" style="margin-right:6px;font-size:9px;"></i>
+                            ${newDate}
+                        </div>
+                        <a href="#" class="fc-link" id="refreshFact">
+                            <i class="fas fa-sync-alt"></i> Fakta lainnya
+                        </a>
+                    `;
+                    document.getElementById('refreshFact')?.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        renderDailyFact();
+                    });
                 });
-
-                statusMsg.textContent = '✅ AR aktif!';
-
-            } catch (err) {
-                console.error(err);
-                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
-        // ─── Stop AR ───────────────────────────────────────────────
-        async function stopAR() {
-            window.removeEventListener('resize', onWindowResize);
-            if (fitRAF) cancelAnimationFrame(fitRAF);
-            if (mindarThree) {
-                try {
-                    await mindarThree.stop();
-                } catch (_) {}
-                mindarThree.renderer.setAnimationLoop(null);
-            }
-            container.style.display = 'none';
-            hud.style.display = 'none';
-            overlay.style.display = 'flex';
-            statusMsg.textContent = '';
-            earthMesh = null;
-            orbitGroup = null;
+        // ============================================================
+        //  SELECT PLANET
+        // ============================================================
+        function selectPlanet(id) {
+            if (id === currentPlanetId) return;
+            currentPlanetId = id;
+            document.querySelectorAll('.planet-card-mini').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === id);
+            });
+            focusCameraOnPlanet(id);
         }
 
-        // ─── Event listeners ──────────────────────────────────────
-        startBtn.addEventListener('click', startAR);
-        stopBtn.addEventListener('click', stopAR);
+        // ============================================================
+        //  CAMERA FOCUS
+        // ============================================================
+        function focusCameraOnPlanet(id) {
+            const data = PLANET_DATA.find(p => p.id === id);
+            if (!data) return;
+            const isSun = id === 'matahari';
+            let targetPos = new THREE.Vector3(0, 0, 0);
+            if (!isSun) {
+                const p = planets[id];
+                if (p && p.orbitGroup) {
+                    const wp = new THREE.Vector3();
+                    p.group.getWorldPosition(wp);
+                    targetPos.copy(wp);
+                } else {
+                    targetPos.set(data.orbitRadius || 0, 0, 0);
+                }
+            }
+            const size = isSun ? 3.6 : data.size;
+            const dist = Math.max(size * 4.5, 5);
+            const finalDist = isSun ? 14 : dist;
+            const pos = new THREE.Vector3(
+                targetPos.x + finalDist * 0.7,
+                targetPos.y + finalDist * 0.5,
+                targetPos.z + finalDist
+            );
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const endTarget = isSun ? new THREE.Vector3(0, 0, 0) : targetPos.clone();
+            const duration = 700;
+            const startTime = performance.now();
+
+            function anim(time) {
+                const t = Math.min((time - startTime) / duration, 1);
+                const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                camera.position.lerpVectors(startPos, pos, ease);
+                controls.target.lerpVectors(startTarget, endTarget, ease);
+                controls.update();
+                if (t < 1) requestAnimationFrame(anim);
+                else {
+                    camera.position.copy(pos);
+                    controls.target.copy(endTarget);
+                    controls.update();
+                    if (isExploreActive) updateExploreLabels();
+                }
+            }
+            requestAnimationFrame(anim);
+        }
+
+        // ============================================================
+        //  VIEW SWITCHING
+        // ============================================================
+        function switchToExplore() {
+            if (isExploreActive) return;
+            isExploreActive = true;
+            currentView = 'explore';
+
+            dashboardScroll.classList.remove('visible');
+            exploreView.classList.remove('hidden');
+            bottomNav.classList.remove('hidden');
+
+            navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'explore'));
+
+            controls.enableZoom = true;
+            controls.minDistance = 5;
+            controls.maxDistance = 120;
+            controls.autoRotate = true;
+
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const endPos = new THREE.Vector3(0, 45, 58);
+            const endTarget = new THREE.Vector3(0, 0, 0);
+            const duration = 700;
+            const startTime = performance.now();
+
+            function anim(time) {
+                const t = Math.min((time - startTime) / duration, 1);
+                const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                camera.position.lerpVectors(startPos, endPos, ease);
+                controls.target.lerpVectors(startTarget, endTarget, ease);
+                controls.update();
+                if (t < 1) requestAnimationFrame(anim);
+                else {
+                    camera.position.copy(endPos);
+                    controls.target.copy(endTarget);
+                    controls.update();
+                    updateExploreLabels();
+                    if (labelInterval) clearInterval(labelInterval);
+                    labelInterval = setInterval(updateExploreLabels, 100);
+                }
+            }
+            requestAnimationFrame(anim);
+        }
+
+        function switchToDashboard() {
+            if (!isExploreActive) return;
+            isExploreActive = false;
+            currentView = 'dashboard';
+
+            dashboardScroll.classList.add('visible');
+            exploreView.classList.add('hidden');
+            bottomNav.classList.remove('hidden');
+
+            navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'dashboard'));
+
+            if (labelInterval) {
+                clearInterval(labelInterval);
+                labelInterval = null;
+            }
+            exploreLabels.innerHTML = '';
+
+            controls.enableZoom = true;
+            controls.minDistance = 5;
+            controls.maxDistance = 120;
+            controls.autoRotate = isAutoRotate;
+
+            const startPos = camera.position.clone();
+            const startTarget = controls.target.clone();
+            const endPos = new THREE.Vector3(0, 50, 80);
+            const endTarget = new THREE.Vector3(0, 0, 0);
+            const duration = 700;
+            const startTime = performance.now();
+
+            function anim(time) {
+                const t = Math.min((time - startTime) / duration, 1);
+                const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                camera.position.lerpVectors(startPos, endPos, ease);
+                controls.target.lerpVectors(startTarget, endTarget, ease);
+                controls.update();
+                if (t < 1) requestAnimationFrame(anim);
+                else {
+                    camera.position.copy(endPos);
+                    controls.target.copy(endTarget);
+                    controls.update();
+                }
+            }
+            requestAnimationFrame(anim);
+        }
+
+        // ============================================================
+        //  EVENT LISTENERS
+        // ============================================================
+        exploreClose.addEventListener('click', switchToDashboard);
+
+        document.querySelector('.nav-btn[data-tab="explore"]').addEventListener('click', () => {
+            if (isExploreActive) return;
+            switchToExplore();
+        });
+
+        document.querySelector('.nav-btn[data-tab="dashboard"]').addEventListener('click', () => {
+            if (!isExploreActive) {
+                dashboardScroll.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            switchToDashboard();
+        });
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                btn.style.transform = 'scale(0.92)';
+                setTimeout(() => btn.style.transform = '', 150);
+            });
+        });
+
+        // ============================================================
+        //  3D CLICK / TAP
+        // ============================================================
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        function onPointerDown(clientX, clientY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const meshes = planetMeshes.map(m => ({ mesh: m.mesh, id: m.id }));
+            const intersects = raycaster.intersectObjects(meshes.map(m => m.mesh));
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                let foundId = null;
+                for (const m of meshes) {
+                    if (m.mesh === hit) { foundId = m.id; break; }
+                }
+                if (foundId) {
+                    selectPlanet(foundId);
+                    focusCameraOnPlanet(foundId);
+                }
+            }
+        }
+
+        renderer.domElement.addEventListener('click', (e) => {
+            onPointerDown(e.clientX, e.clientY);
+        });
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.changedTouches.length === 1) {
+                const t = e.changedTouches[0];
+                onPointerDown(t.clientX, t.clientY);
+            }
+        }, { passive: true });
+
+        // ============================================================
+        //  ANIMATION LOOP
+        // ============================================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            const delta = clock.getDelta();
+            const elapsed = clock.getElapsedTime();
+
+            for (const [id, p] of Object.entries(planets)) {
+                if (id === 'matahari') {
+                    p.group.rotation.y += delta * 0.04;
+                    const glow = p.group.children[1];
+                    if (glow) {
+                        const pulse = 1 + 0.03 * Math.sin(elapsed * 0.5);
+                        glow.scale.set(pulse, pulse, pulse);
+                    }
+                    continue;
+                }
+                if (p.orbitGroup) {
+                    p.angle += delta * p.data.speed * 1.2;
+                    p.orbitGroup.rotation.y = p.angle;
+                    p.group.rotation.y += delta * 0.5;
+                }
+            }
+
+            stars.rotation.y += delta * 0.0015;
+            stars.rotation.x += delta * 0.0004;
+
+            controls.update();
+
+            composer.render();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // ============================================================
+        //  RESIZE
+        // ============================================================
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            composer.setSize(w, h);
+            if (isExploreActive) updateExploreLabels();
+        });
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        renderPlanetGrid();
+        renderDailyFact();
+
+        // Dashboard visible, Explore hidden
+        dashboardScroll.classList.add('visible');
+        exploreView.classList.add('hidden');
+        navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'dashboard'));
+
+        camera.position.set(0, 50, 80);
+        controls.target.set(0, 0, 0);
+        controls.update();
+        controls.autoRotate = true;
+
+        // Hilangkan splash screen setelah 1,2 detik
+        setTimeout(() => {
+            document.getElementById('loading').classList.add('hidden');
+        }, 1200);
+
+        // ============================================================
+        //  KEYBOARD
+        // ============================================================
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (isExploreActive) switchToDashboard();
+                else switchToExplore();
+            }
+            if (e.key === 'e' || e.key === 'E') {
+                if (isExploreActive) switchToDashboard();
+                else switchToExplore();
+            }
+            if (e.key === 'd' || e.key === 'D') {
+                if (!isExploreActive) {
+                    dashboardScroll.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    switchToDashboard();
+                }
+            }
+        });
+
+        console.log('🚀 Nanay Astro — Dashboard siap!');
+        console.log('📖 Fakta Harian menampilkan kutipan astronomi setiap hari.');
+        console.log('🌍 Klik planet di grid atau di 3D untuk fokus.');
     </script>
 </body>
 </html>
