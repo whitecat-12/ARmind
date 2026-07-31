@@ -30,13 +30,13 @@
 
         :root {
             --bg-primary: #06080f;
-            --bg-card: rgba(255, 255, 255, 0.045);
-            --bg-card-hover: rgba(255, 255, 255, 0.075);
-            --border-card: rgba(255, 255, 255, 0.06);
-            --border-card-hover: rgba(255, 255, 255, 0.12);
-            --text-primary: #f0f4ff;
-            --text-secondary: rgba(255, 255, 255, 0.5);
-            --text-muted: rgba(255, 255, 255, 0.2);
+            --bg-card: rgba(255, 255, 255, 0.08);
+            --bg-card-hover: rgba(255, 255, 255, 0.15);
+            --border-card: rgba(255, 255, 255, 0.1);
+            --border-card-hover: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.4);
             --glow-gold: #f9d976;
             --glow-blue: #4d8bf7;
             --glow-orange: #f39f86;
@@ -83,7 +83,7 @@
             z-index: 10;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 0 16px 140px;
+            padding: 0 16px 180px;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
             transition: opacity 0.5s ease, transform 0.5s ease;
@@ -106,12 +106,12 @@
             background: transparent;
         }
         .dashboard-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 10px;
         }
 
         /* ============================================================
-           TOP APP BAR — tanpa tombol sama sekali
+           TOP APP BAR
            ============================================================ */
         .app-bar {
             display: flex;
@@ -123,12 +123,12 @@
             z-index: 30;
             backdrop-filter: blur(20px) saturate(1.2);
             -webkit-backdrop-filter: blur(20px) saturate(1.2);
-            background: rgba(6, 8, 15, 0.55);
+            background: rgba(6, 8, 15, 0.65);
             margin: 0 -16px;
             padding-left: 16px;
             padding-right: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
         .app-bar .left {
@@ -146,7 +146,7 @@
         }
 
         .app-bar .left .brand h1 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             letter-spacing: -0.3px;
             background: linear-gradient(135deg, #f9d976 0%, #f39f86 60%, #f9d976 100%);
@@ -155,6 +155,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: shimmerText 4s ease-in-out infinite;
+            text-shadow: 0 0 40px rgba(249, 217, 118, 0.1);
         }
 
         @keyframes shimmerText {
@@ -168,11 +169,11 @@
         }
 
         .app-bar .left .brand span {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.15);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
             font-weight: 400;
             letter-spacing: 0.6px;
-            -webkit-text-fill-color: rgba(255, 255, 255, 0.15);
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.3);
         }
 
         /* ============================================================
@@ -186,22 +187,23 @@
         }
 
         .section-header h3 {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--text-secondary);
             letter-spacing: 0.3px;
             display: flex;
             align-items: center;
             gap: 8px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
         }
 
         .section-header h3 i {
-            color: var(--text-muted);
-            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 13px;
         }
 
         /* ============================================================
-           PLANET CARDS — GRID penuh dengan href
+           PLANET CARDS
            ============================================================ */
         .planet-grid {
             display: grid;
@@ -214,12 +216,12 @@
             display: block;
             text-decoration: none;
             color: inherit;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(12px) saturate(1.05);
             -webkit-backdrop-filter: blur(12px) saturate(1.05);
             border-radius: var(--radius-sm);
             padding: 14px 8px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
             cursor: pointer;
             transition: var(--transition-smooth);
@@ -234,15 +236,15 @@
             position: absolute;
             inset: 0;
             border-radius: var(--radius-sm);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
             pointer-events: none;
         }
 
         .planet-card-mini:hover {
             background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
         }
 
         .planet-card-mini:active {
@@ -250,10 +252,10 @@
         }
 
         .planet-card-mini .p-icon {
-            font-size: 28px;
+            font-size: 30px;
             display: block;
             margin-bottom: 4px;
-            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.04));
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.05));
             transition: var(--transition-smooth);
             line-height: 1.2;
         }
@@ -263,14 +265,15 @@
         }
 
         .planet-card-mini .p-name {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.95);
             letter-spacing: -0.2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
         }
 
         .planet-card-mini .p-badge {
-            font-size: 7px;
+            font-size: 8px;
             text-transform: uppercase;
             color: var(--text-muted);
             letter-spacing: 0.6px;
@@ -286,19 +289,19 @@
         }
 
         .planet-card-mini.active .p-icon {
-            filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.12));
+            filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.15));
         }
 
         /* ============================================================
-           FEATURED CARD — FAKTA HARIAN (kutipan astronomi)
+           FEATURED CARD — FAKTA HARIAN
            ============================================================ */
         .featured-card {
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(0, 0, 0, 0.45);
             backdrop-filter: blur(20px) saturate(1.1);
             -webkit-backdrop-filter: blur(20px) saturate(1.1);
             border-radius: var(--radius-card);
             padding: 20px 18px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             margin: 6px 0 14px;
             transition: var(--transition-smooth);
             box-shadow: var(--shadow-card);
@@ -317,19 +320,19 @@
             right: -20%;
             width: 80%;
             height: 80%;
-            background: radial-gradient(circle, rgba(249, 217, 118, 0.03) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(249, 217, 118, 0.05) 0%, transparent 70%);
             pointer-events: none;
         }
 
         .featured-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
             box-shadow: 0 16px 56px rgba(0, 0, 0, 0.5);
         }
 
         .featured-card .fc-quote-icon {
             font-size: 28px;
-            color: var(--text-muted);
-            opacity: 0.3;
+            color: rgba(255, 255, 255, 0.2);
+            opacity: 0.5;
             margin-bottom: 6px;
             position: relative;
             z-index: 1;
@@ -339,11 +342,12 @@
             font-size: 18px;
             font-weight: 400;
             line-height: 1.6;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.95);
             position: relative;
             z-index: 1;
             font-style: italic;
             letter-spacing: 0.2px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
         }
 
         .featured-card .fc-quote-author {
@@ -357,11 +361,12 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            text-shadow: 0 0 20px rgba(249, 217, 118, 0.15);
         }
 
         .featured-card .fc-quote-author i {
             font-size: 10px;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.3);
             opacity: 0.5;
         }
 
@@ -382,8 +387,8 @@
             text-decoration: none;
             padding: 4px 16px;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
             transition: var(--transition-smooth);
             position: relative;
             z-index: 1;
@@ -391,8 +396,8 @@
         }
 
         .featured-card .fc-link:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
             color: #fff;
         }
 
@@ -402,7 +407,7 @@
         }
 
         /* ============================================================
-           EXPLORE VIEW — full screen immersive
+           EXPLORE VIEW
            ============================================================ */
         .explore-view {
             position: fixed;
@@ -428,7 +433,7 @@
             left: 0;
             right: 0;
             padding: 18px 20px 14px;
-            background: linear-gradient(180deg, rgba(6, 8, 15, 0.75) 40%, transparent);
+            background: linear-gradient(180deg, rgba(6, 8, 15, 0.8) 40%, transparent);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -449,7 +454,7 @@
         .explore-view .explore-header .ex-title i {
             font-size: 20px;
             color: #f9d976;
-            filter: drop-shadow(0 0 16px rgba(249, 217, 118, 0.15));
+            filter: drop-shadow(0 0 16px rgba(249, 217, 118, 0.2));
         }
 
         .explore-view .explore-header .ex-title h2 {
@@ -457,6 +462,7 @@
             font-weight: 700;
             letter-spacing: -0.3px;
             color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
         .explore-view .explore-header .ex-title span {
@@ -467,12 +473,12 @@
         }
 
         .explore-view .explore-header .ex-close {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 50%;
             width: 38px;
             height: 38px;
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.4);
             font-size: 16px;
             cursor: pointer;
             transition: var(--transition-smooth);
@@ -484,9 +490,9 @@
         }
 
         .explore-view .explore-header .ex-close:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.7);
             transform: rotate(90deg);
         }
 
@@ -503,46 +509,46 @@
             color: var(--text-muted);
             letter-spacing: 0.8px;
             font-weight: 300;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             padding: 6px 18px;
             border-radius: 30px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             pointer-events: none;
             white-space: nowrap;
         }
 
         .explore-view .explore-hint i {
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.2);
         }
 
         .explore-label {
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.8);
             font-size: 10px;
             font-weight: 500;
             letter-spacing: 0.5px;
             text-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
             pointer-events: none;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             padding: 2px 12px;
             border-radius: 16px;
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             transition: opacity 0.3s;
             white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
         .explore-label.sun-label {
             color: #f9d976;
             font-weight: 600;
-            background: rgba(249, 217, 118, 0.08);
-            border-color: rgba(249, 217, 118, 0.08);
+            background: rgba(249, 217, 118, 0.12);
+            border-color: rgba(249, 217, 118, 0.12);
         }
 
         /* ============================================================
-           BOTTOM NAV — Dashboard di kiri, Explore di kanan
+           BOTTOM NAV — LEBIH BESAR
            ============================================================ */
         .bottom-nav {
             position: fixed;
@@ -550,18 +556,17 @@
             left: 0;
             right: 0;
             z-index: 40;
-            background: rgba(6, 8, 15, 0.85);
-            backdrop-filter: blur(28px) saturate(1.2);
-            -webkit-backdrop-filter: blur(28px) saturate(1.2);
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            padding: 6px 8px env(safe-area-inset-bottom, 8px);
-            padding-bottom: max(6px, env(safe-area-inset-bottom, 8px));
+            background: rgba(6, 8, 15, 0.94);
+            backdrop-filter: blur(30px) saturate(1.3);
+            -webkit-backdrop-filter: blur(30px) saturate(1.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 16px 12px env(safe-area-inset-bottom, 18px);
+            padding-bottom: max(16px, env(safe-area-inset-bottom, 18px));
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 40px;
+            justify-content: space-around;
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6), 0 0 60px rgba(249, 217, 118, 0.03);
         }
 
         .bottom-nav.hidden {
@@ -572,22 +577,22 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1px;
+            gap: 4px;
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.15);
             cursor: pointer;
-            padding: 4px 8px;
-            min-width: 48px;
+            padding: 8px 12px;
+            min-width: 72px;
             transition: var(--transition-smooth);
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             position: relative;
-            border-radius: 12px;
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.85);
         }
 
         .nav-btn:hover {
-            color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 1);
         }
 
         .nav-btn:active {
@@ -595,53 +600,57 @@
         }
 
         .nav-btn .nav-icon {
-            font-size: 18px;
+            font-size: 30px;
             transition: var(--transition-smooth);
             position: relative;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.05));
         }
 
         .nav-btn .nav-label {
-            font-size: 8px;
-            font-weight: 600;
-            letter-spacing: 0.4px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
             text-transform: uppercase;
-            opacity: 0.4;
+            opacity: 0.8;
             transition: var(--transition-smooth);
+            color: inherit;
         }
 
+        /* Default warna ikon per tab (selalu terang) */
+        .nav-btn[data-tab="dashboard"] .nav-icon { color: #f9d976; opacity: 0.8; }
+        .nav-btn[data-tab="explore"] .nav-icon { color: #4d8bf7; opacity: 0.8; }
+        .nav-btn[data-tab="planet"] .nav-icon { color: #7ec8e3; opacity: 0.8; }
+        .nav-btn[data-tab="fakta"] .nav-icon { color: #f39f86; opacity: 0.8; }
+
+        /* Saat aktif, warna lebih terang + glow */
+        .nav-btn.active .nav-icon { opacity: 1; }
+        .nav-btn[data-tab="dashboard"].active .nav-icon { filter: drop-shadow(0 0 20px rgba(249, 217, 118, 0.5)); }
+        .nav-btn[data-tab="explore"].active .nav-icon { filter: drop-shadow(0 0 20px rgba(77, 139, 247, 0.5)); }
+        .nav-btn[data-tab="planet"].active .nav-icon { filter: drop-shadow(0 0 20px rgba(126, 200, 227, 0.5)); }
+        .nav-btn[data-tab="fakta"].active .nav-icon { filter: drop-shadow(0 0 20px rgba(243, 159, 134, 0.5)); }
+
+        /* Label aktif lebih terang */
         .nav-btn.active .nav-label {
             opacity: 1;
             color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
         .nav-btn .nav-dot {
             position: absolute;
             top: -2px;
-            right: -6px;
-            width: 5px;
-            height: 5px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #f9d976;
             opacity: 0;
             transition: var(--transition-smooth);
-            box-shadow: 0 0 12px rgba(249, 217, 118, 0.2);
+            box-shadow: 0 0 20px rgba(249, 217, 118, 0.4);
         }
 
         .nav-btn.active .nav-dot {
             opacity: 1;
-        }
-
-        .nav-btn[data-tab="dashboard"] .nav-icon {
-            color: rgba(255, 255, 255, 0.2);
-        }
-        .nav-btn[data-tab="dashboard"].active .nav-icon {
-            color: #f9d976;
-        }
-        .nav-btn[data-tab="explore"] .nav-icon {
-            color: rgba(255, 255, 255, 0.2);
-        }
-        .nav-btn[data-tab="explore"].active .nav-icon {
-            color: #4d8bf7;
         }
 
         /* ============================================================
@@ -649,7 +658,7 @@
            ============================================================ */
         @media (min-width: 600px) {
             .dashboard-scroll {
-                padding: 0 40px 150px;
+                padding: 0 40px 180px;
             }
             .app-bar {
                 padding-left: 40px;
@@ -664,18 +673,22 @@
                 padding: 16px 12px;
             }
             .planet-card-mini .p-icon {
-                font-size: 34px;
+                font-size: 36px;
             }
             .bottom-nav {
-                padding: 8px 20px env(safe-area-inset-bottom, 12px);
-                gap: 60px;
+                padding: 18px 24px env(safe-area-inset-bottom, 20px);
+                gap: 20px;
             }
             .nav-btn {
-                min-width: 60px;
-                padding: 6px 14px;
+                min-width: 86px;
+                padding: 10px 16px;
+                gap: 5px;
+            }
+            .nav-btn .nav-icon {
+                font-size: 34px;
             }
             .nav-btn .nav-label {
-                font-size: 9px;
+                font-size: 13px;
             }
             .explore-view .explore-header .ex-title h2 {
                 font-size: 20px;
@@ -704,7 +717,7 @@
                 padding: 10px 6px;
             }
             .planet-card-mini .p-icon {
-                font-size: 22px;
+                font-size: 24px;
             }
             .planet-card-mini .p-name {
                 font-size: 9px;
@@ -715,15 +728,20 @@
             .app-bar .left .brand span {
                 font-size: 9px;
             }
+            .bottom-nav {
+                padding: 12px 8px env(safe-area-inset-bottom, 14px);
+                gap: 8px;
+            }
             .nav-btn {
-                min-width: 36px;
-                padding: 2px 4px;
+                min-width: 52px;
+                padding: 6px 6px;
+                gap: 3px;
             }
             .nav-btn .nav-icon {
-                font-size: 15px;
+                font-size: 24px;
             }
             .nav-btn .nav-label {
-                font-size: 7px;
+                font-size: 10px;
             }
             .explore-view .explore-header .ex-title h2 {
                 font-size: 14px;
@@ -742,153 +760,205 @@
                 font-size: 8px;
                 padding: 1px 8px;
             }
-            .bottom-nav {
-                gap: 20px;
-            }
         }
 
         @media (max-width: 360px) {
             .featured-card .fc-quote {
                 font-size: 13px;
             }
+            .bottom-nav {
+                padding: 10px 4px env(safe-area-inset-bottom, 12px);
+                gap: 4px;
+            }
+            .nav-btn {
+                min-width: 44px;
+                padding: 4px 4px;
+                gap: 2px;
+            }
+            .nav-btn .nav-icon {
+                font-size: 20px;
+            }
+            .nav-btn .nav-label {
+                font-size: 8px;
+                letter-spacing: 0.3px;
+            }
         }
 
         /* ============================================================
-           LOADING / SPLASH SCREEN — "Nanay Astro"
+           SPLASH SCREEN — LEBIH CANTIK
            ============================================================ */
         #loading {
             position: fixed;
             inset: 0;
             z-index: 100;
-            background: #06080f;
+            background: radial-gradient(ellipse at 30% 20%, #0a0e1a, #06080f 70%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 25px;
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            gap: 20px;
+            transition: opacity 0.9s ease, transform 0.9s ease;
+            overflow: hidden;
         }
         #loading.hidden {
             opacity: 0;
             pointer-events: none;
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
+        /* Bintang-bintang kecil di latar belakang */
+        #loading .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        #loading .stars span {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2.5s ease-in-out infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Ikon roket dengan efek lintasan */
         #loading .splash-icon {
-            font-size: 60px;
+            font-size: 70px;
             background: linear-gradient(135deg, #f9d976, #f39f86);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: floatIcon 2.5s ease-in-out infinite;
-            filter: drop-shadow(0 0 40px rgba(249, 217, 118, 0.15));
+            animation: floatRocket 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(249, 217, 118, 0.25));
+            position: relative;
+            z-index: 2;
         }
-        @keyframes floatIcon {
-            0%,
-            100% {
-                transform: translateY(0) scale(1);
-            }
-            50% {
-                transform: translateY(-10px) scale(1.05);
-            }
+        @keyframes floatRocket {
+            0%, 100% { transform: translateY(0) rotate(-3deg) scale(1); }
+            50% { transform: translateY(-16px) rotate(3deg) scale(1.05); }
         }
 
+        /* Lingkaran cahaya di belakang ikon */
+        #loading .splash-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(249, 217, 118, 0.15), transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulseGlow 2.5s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+        }
+
+        /* Judul dengan gradien dan bayangan */
         #loading .splash-title {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 36px;
+            font-weight: 800;
             letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #f9d976 0%, #f39f86 60%, #f9d976 100%);
+            background: linear-gradient(135deg, #f9d976 0%, #f39f86 50%, #f9d976 100%);
             background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: shimmerText 3s ease-in-out infinite;
-            text-shadow: 0 0 60px rgba(249, 217, 118, 0.05);
+            text-shadow: 0 0 80px rgba(249, 217, 118, 0.15);
+            position: relative;
+            z-index: 2;
         }
 
+        /* Subjudul dengan efek typing */
         #loading .splash-sub {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.15);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.35);
             font-weight: 300;
-            letter-spacing: 4px;
+            letter-spacing: 5px;
             text-transform: uppercase;
-            margin-top: -8px;
+            margin-top: -6px;
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1.2s ease-out both;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
+        /* Spinner dengan efek glow */
         #loading .spinner {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.04);
+            border: 2.5px solid rgba(255, 255, 255, 0.04);
             border-top-color: #f9d976;
-            animation: spin 0.9s linear infinite;
-            box-shadow: 0 0 40px rgba(249, 217, 118, 0.03);
+            animation: spin 0.9s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+            box-shadow: 0 0 30px rgba(249, 217, 118, 0.06);
+            position: relative;
+            z-index: 2;
         }
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
+        /* Titik-titik loading */
         #loading .loading-dots {
             display: flex;
-            gap: 6px;
-            margin-top: -5px;
+            gap: 8px;
+            margin-top: -4px;
+            position: relative;
+            z-index: 2;
         }
         #loading .loading-dots span {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            animation: dotPulse 1.4s ease-in-out infinite both;
+            background: rgba(255, 255, 255, 0.15);
+            animation: dotPulse 1.6s ease-in-out infinite both;
         }
-        #loading .loading-dots span:nth-child(1) {
-            animation-delay: 0s;
-        }
-        #loading .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        #loading .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+        #loading .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        #loading .loading-dots span:nth-child(2) { animation-delay: 0.25s; }
+        #loading .loading-dots span:nth-child(3) { animation-delay: 0.5s; }
         @keyframes dotPulse {
-            0%,
-            80%,
-            100% {
-                transform: scale(0.6);
-                opacity: 0.3;
-            }
-            40% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; }
+            40% { transform: scale(1.2); opacity: 1; }
         }
 
-        /* ============================================================
-           RESPONSIVE LOADING
-           ============================================================ */
+        /* Responsif splash */
         @media (max-width: 420px) {
-            #loading .splash-title {
-                font-size: 24px;
-            }
-            #loading .splash-icon {
-                font-size: 44px;
-            }
-            #loading .splash-sub {
-                font-size: 11px;
-                letter-spacing: 3px;
-            }
-            #loading .spinner {
-                width: 36px;
-                height: 36px;
-            }
+            #loading .splash-title { font-size: 28px; }
+            #loading .splash-icon { font-size: 56px; }
+            #loading .splash-sub { font-size: 12px; letter-spacing: 3px; }
+            #loading .spinner { width: 40px; height: 40px; }
+            #loading .splash-icon::after { width: 90px; height: 90px; }
+        }
+        @media (max-width: 360px) {
+            #loading .splash-title { font-size: 24px; }
+            #loading .splash-icon { font-size: 48px; }
+            #loading .splash-sub { font-size: 10px; letter-spacing: 2px; }
+            #loading .spinner { width: 36px; height: 36px; }
+            #loading .splash-icon::after { width: 70px; height: 70px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== LOADING / SPLASH SCREEN ===== -->
+    <!-- ===== SPLASH SCREEN ===== -->
     <div id="loading">
+        <!-- Bintang-bintang latar (dibuat dengan JS) -->
+        <div class="stars" id="starfield"></div>
+
         <div class="splash-icon"><i class="fas fa-rocket"></i></div>
         <div class="splash-title">Nanay Astro</div>
         <div class="splash-sub">Menjelajah Tata Surya</div>
@@ -903,7 +973,7 @@
     <!-- ===== THREE.JS CANVAS ===== -->
     <div id="three-container"></div>
 
-    <!-- ===== EXPLORE VIEW — hidden saat awal ===== -->
+    <!-- ===== EXPLORE VIEW ===== -->
     <div class="explore-view hidden" id="exploreView">
         <div class="explore-header">
             <div class="ex-title">
@@ -920,7 +990,7 @@
         <div id="exploreLabels" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;overflow:hidden;"></div>
     </div>
 
-    <!-- ===== DASHBOARD SCROLL — visible saat awal ===== -->
+    <!-- ===== DASHBOARD SCROLL ===== -->
     <div class="dashboard-scroll visible" id="dashboardScroll">
 
         <header class="app-bar">
@@ -932,14 +1002,14 @@
             </div>
         </header>
 
-        <div class="section-header">
+        <div class="section-header" id="section-planet">
             <h3><i class="fas fa-globe"></i> Semua Planet</h3>
             <span style="font-size:9px;color:var(--text-muted);font-weight:400;">klik kartu untuk buka halaman</span>
         </div>
 
         <div class="planet-grid" id="planetGrid"></div>
 
-        <div class="section-header" style="margin-top:4px;">
+        <div class="section-header" id="section-fakta" style="margin-top:4px;">
             <h3><i class="fas fa-star"></i> Fakta Harian</h3>
             <span style="font-size:9px;color:var(--text-muted);font-weight:400;">kutipan astronomi</span>
         </div>
@@ -948,15 +1018,23 @@
         <div style="height:20px;"></div>
     </div>
 
-    <!-- ===== BOTTOM NAV ===== -->
+    <!-- ===== BOTTOM NAV — 4 tombol, lebih besar ===== -->
     <nav class="bottom-nav" id="bottomNav">
         <button class="nav-btn active" data-tab="dashboard">
             <span class="nav-icon"><i class="fas fa-th-large"></i><span class="nav-dot"></span></span>
-            <span class="nav-label">Dashboard</span>
+            <span class="nav-label">Beranda</span>
         </button>
         <button class="nav-btn" data-tab="explore">
             <span class="nav-icon"><i class="fas fa-rocket"></i><span class="nav-dot"></span></span>
             <span class="nav-label">Explore</span>
+        </button>
+        <button class="nav-btn" data-tab="planet">
+            <span class="nav-icon"><i class="fas fa-globe-asia"></i><span class="nav-dot"></span></span>
+            <span class="nav-label">Planet</span>
+        </button>
+        <button class="nav-btn" data-tab="fakta">
+            <span class="nav-icon"><i class="fas fa-star"></i><span class="nav-dot"></span></span>
+            <span class="nav-label">Fakta</span>
         </button>
     </nav>
 
@@ -972,6 +1050,23 @@
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // ============================================================
+        //  SPLASH SCREEN BINTANG
+        // ============================================================
+        const starfield = document.getElementById('starfield');
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('span');
+            const size = Math.random() * 2.5 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            star.style.animationDuration = (Math.random() * 3 + 1.5) + 's';
+            star.style.opacity = Math.random() * 0.6 + 0.2;
+            starfield.appendChild(star);
+        }
 
         // ============================================================
         //  PLANET DATA
@@ -1078,7 +1173,7 @@
         }];
 
         // ============================================================
-        //  FAKTA HARIAN — kutipan dari para ilmuwan & astronom
+        //  FAKTA HARIAN
         // ============================================================
         const QUOTES = [
             { quote: "Kita semua debu bintang. Atom-atom dalam tubuh kita berasal dari ledakan bintang-bintang dahulu kala.", author: "Carl Sagan", source: "Astronom" },
@@ -1096,7 +1191,7 @@
         ];
 
         // ============================================================
-        //  URL MAPPING untuk href
+        //  URL MAPPING
         // ============================================================
         const URL_MAP = {
             'matahari': 'matahari.html',
@@ -1164,7 +1259,7 @@
         scene.add(fillLight);
 
         // ============================================================
-        //  STARFIELD
+        //  STARFIELD 3D
         // ============================================================
         const starsCount = 4500;
         const starPos = new Float32Array(starsCount * 3);
@@ -1214,7 +1309,7 @@
         }
 
         // ============================================================
-        //  CREATE SUN
+        //  CREATE SUN & PLANETS
         // ============================================================
         function createSun() {
             const g = new THREE.Group();
@@ -1238,9 +1333,6 @@
             return g;
         }
 
-        // ============================================================
-        //  CREATE PLANET
-        // ============================================================
         function createPlanet(data) {
             const g = new THREE.Group();
             const geo = new THREE.SphereGeometry(data.size, 32, 32);
@@ -1346,12 +1438,11 @@
 
         let currentPlanetId = 'bumi';
         let isAutoRotate = true;
-        let currentView = 'dashboard';
         let isExploreActive = false;
         let labelInterval = null;
 
         // ============================================================
-        //  LABEL UPDATE (Explore view)
+        //  LABEL UPDATE (Explore)
         // ============================================================
         function updateExploreLabels() {
             const container = exploreLabels;
@@ -1375,7 +1466,6 @@
 
             const halfWidth = window.innerWidth / 2;
             const halfHeight = window.innerHeight / 2;
-
             const emojiMap = {
                 'matahari': '☀️',
                 'merkurius': '☿',
@@ -1500,7 +1590,7 @@
         }
 
         // ============================================================
-        //  SELECT PLANET
+        //  SELECT PLANET (dari 3D click)
         // ============================================================
         function selectPlanet(id) {
             if (id === currentPlanetId) return;
@@ -1566,7 +1656,6 @@
         function switchToExplore() {
             if (isExploreActive) return;
             isExploreActive = true;
-            currentView = 'explore';
 
             dashboardScroll.classList.remove('visible');
             exploreView.classList.remove('hidden');
@@ -1608,7 +1697,6 @@
         function switchToDashboard() {
             if (!isExploreActive) return;
             isExploreActive = false;
-            currentView = 'dashboard';
 
             dashboardScroll.classList.add('visible');
             exploreView.classList.add('hidden');
@@ -1655,25 +1743,30 @@
         // ============================================================
         exploreClose.addEventListener('click', switchToDashboard);
 
-        document.querySelector('.nav-btn[data-tab="explore"]').addEventListener('click', () => {
-            if (isExploreActive) return;
-            switchToExplore();
-        });
-
-        document.querySelector('.nav-btn[data-tab="dashboard"]').addEventListener('click', () => {
-            if (!isExploreActive) {
-                dashboardScroll.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
-            }
-            switchToDashboard();
-        });
-
+        // Navigasi bottom
         navBtns.forEach(btn => {
             btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                // Reset semua active
                 navBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                btn.style.transform = 'scale(0.92)';
-                setTimeout(() => btn.style.transform = '', 150);
+
+                if (tab === 'explore') {
+                    if (!isExploreActive) switchToExplore();
+                } else if (tab === 'dashboard') {
+                    if (isExploreActive) switchToDashboard();
+                    else dashboardScroll.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (tab === 'planet') {
+                    if (isExploreActive) switchToDashboard();
+                    setTimeout(() => {
+                        document.getElementById('section-planet').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 400);
+                } else if (tab === 'fakta') {
+                    if (isExploreActive) switchToDashboard();
+                    setTimeout(() => {
+                        document.getElementById('section-fakta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 400);
+                }
             });
         });
 
@@ -1745,7 +1838,6 @@
             stars.rotation.x += delta * 0.0004;
 
             controls.update();
-
             composer.render();
             requestAnimationFrame(animate);
         }
@@ -1770,7 +1862,6 @@
         renderPlanetGrid();
         renderDailyFact();
 
-        // Dashboard visible, Explore hidden
         dashboardScroll.classList.add('visible');
         exploreView.classList.add('hidden');
         navBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === 'dashboard'));
@@ -1780,10 +1871,10 @@
         controls.update();
         controls.autoRotate = true;
 
-        // Hilangkan splash screen setelah 1,2 detik
+        // Hilangkan splash screen dengan efek smooth
         setTimeout(() => {
             document.getElementById('loading').classList.add('hidden');
-        }, 1200);
+        }, 1500);
 
         // ============================================================
         //  KEYBOARD
@@ -1792,17 +1883,6 @@
             if (e.key === 'Escape') {
                 if (isExploreActive) switchToDashboard();
                 else switchToExplore();
-            }
-            if (e.key === 'e' || e.key === 'E') {
-                if (isExploreActive) switchToDashboard();
-                else switchToExplore();
-            }
-            if (e.key === 'd' || e.key === 'D') {
-                if (!isExploreActive) {
-                    dashboardScroll.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    switchToDashboard();
-                }
             }
         });
 
