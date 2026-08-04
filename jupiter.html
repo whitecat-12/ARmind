@@ -214,116 +214,150 @@
             applyContainFit();
         }
 
-        // ─── Buat tekstur Jupiter (procedural, sangat detail) ────
+        // ─── Buat tekstur Jupiter (procedural) yang lebih detail ──
         function createJupiterTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2048;
             canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // 1. Warna dasar gradasi vertikal (seperti pita Jupiter)
+            // 1. Warna dasar - gradasi oranye-coklat dengan variasi
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#d4a373');  // krem
-            grad.addColorStop(0.1, '#c9a07a');
-            grad.addColorStop(0.2, '#b8895a');
-            grad.addColorStop(0.3, '#a87a4a');
-            grad.addColorStop(0.4, '#c9a07a');
-            grad.addColorStop(0.5, '#d4a373');
-            grad.addColorStop(0.55, '#b8895a');
-            grad.addColorStop(0.65, '#a87a4a');
-            grad.addColorStop(0.75, '#c9a07a');
-            grad.addColorStop(0.85, '#b8895a');
-            grad.addColorStop(0.9, '#a87a4a');
-            grad.addColorStop(1, '#d4a373');
+            grad.addColorStop(0, '#d4a07a');
+            grad.addColorStop(0.1, '#c8926a');
+            grad.addColorStop(0.25, '#e0b08a');
+            grad.addColorStop(0.4, '#c8906a');
+            grad.addColorStop(0.55, '#b07858');
+            grad.addColorStop(0.7, '#d4a07a');
+            grad.addColorStop(0.85, '#c8906a');
+            grad.addColorStop(1, '#a06848');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Pita-pita horizontal dengan variasi
+            // 2. Pita-pita horizontal dengan lebih banyak lapisan
             const bands = [
-                { y: 0.05, height: 0.03, color: 'rgba(180,120,80,0.4)' },
-                { y: 0.12, height: 0.05, color: 'rgba(200,150,100,0.3)' },
-                { y: 0.20, height: 0.04, color: 'rgba(160,100,60,0.5)' },
-                { y: 0.28, height: 0.06, color: 'rgba(210,170,130,0.3)' },
-                { y: 0.38, height: 0.03, color: 'rgba(140,90,50,0.4)' },
-                { y: 0.45, height: 0.08, color: 'rgba(200,160,120,0.3)' },
-                { y: 0.55, height: 0.04, color: 'rgba(170,110,70,0.5)' },
-                { y: 0.62, height: 0.05, color: 'rgba(220,180,140,0.2)' },
-                { y: 0.72, height: 0.03, color: 'rgba(150,95,55,0.4)' },
-                { y: 0.80, height: 0.07, color: 'rgba(190,140,100,0.3)' },
-                { y: 0.90, height: 0.04, color: 'rgba(130,80,40,0.5)' },
+                { y: 0.03, h: 0.035, color: 'rgba(200, 160, 120, 0.5)' },
+                { y: 0.08, h: 0.04, color: 'rgba(160, 120, 90, 0.4)' },
+                { y: 0.14, h: 0.05, color: 'rgba(220, 180, 150, 0.35)' },
+                { y: 0.21, h: 0.04, color: 'rgba(180, 140, 110, 0.5)' },
+                { y: 0.28, h: 0.07, color: 'rgba(230, 200, 170, 0.3)' },
+                { y: 0.38, h: 0.04, color: 'rgba(150, 110, 80, 0.5)' },
+                { y: 0.45, h: 0.09, color: 'rgba(240, 215, 185, 0.25)' },
+                { y: 0.57, h: 0.04, color: 'rgba(160, 120, 90, 0.45)' },
+                { y: 0.64, h: 0.06, color: 'rgba(210, 175, 145, 0.35)' },
+                { y: 0.73, h: 0.04, color: 'rgba(180, 140, 110, 0.5)' },
+                { y: 0.80, h: 0.05, color: 'rgba(220, 185, 155, 0.3)' },
+                { y: 0.88, h: 0.04, color: 'rgba(170, 130, 100, 0.4)' },
+                { y: 0.94, h: 0.04, color: 'rgba(200, 160, 130, 0.35)' },
             ];
+
             bands.forEach((b) => {
-                const y0 = b.y * canvas.height;
-                const h = b.height * canvas.height;
+                const yPos = b.y * canvas.height;
+                const height = b.h * canvas.height;
                 ctx.fillStyle = b.color;
-                ctx.fillRect(0, y0, canvas.width, h);
+                ctx.fillRect(0, yPos, canvas.width, height);
             });
 
-            // 3. Pita bergelombang (efek turbulensi)
-            ctx.strokeStyle = 'rgba(255,200,150,0.08)';
-            ctx.lineWidth = 6;
-            for (let i = 0; i < 30; i++) {
-                const yBase = Math.random() * canvas.height;
+            // 3. Detail turbulensi - swirl dan pusaran
+            for (let i = 0; i < 1200; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.random() * 20 + 2;
+                const alpha = Math.random() * 0.2 + 0.03;
+                const hue = 30 + Math.random() * 25;
+                const lightness = 50 + Math.random() * 30;
                 ctx.beginPath();
-                for (let x = 0; x < canvas.width; x += 2) {
-                    const y = yBase + Math.sin(x * 0.01 + i * 0.5) * 15 + Math.sin(x * 0.02 + i * 1.2) * 8;
-                    if (x === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 60%, ${lightness}%, ${alpha})`;
+                ctx.fill();
+            }
+
+            // 4. Garis-garis awan melengkung (streams)
+            ctx.strokeStyle = 'rgba(220, 200, 170, 0.08)';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 150; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const len = Math.random() * 200 + 80;
+                const angle = Math.random() * Math.PI * 2;
+                const curve = (Math.random() - 0.5) * 0.8;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                let steps = 30;
+                for (let j = 0; j <= steps; j++) {
+                    const t = j / steps;
+                    const px = x + Math.cos(angle) * len * t + Math.sin(angle * 0.4) * curve * len * t * 40;
+                    const py = y + Math.sin(angle) * len * t + Math.cos(angle * 0.4) * curve * len * t * 40;
+                    ctx.lineTo(px, py);
                 }
                 ctx.stroke();
             }
 
-            // 4. Bintik Merah Besar (Great Red Spot)
-            const spotX = canvas.width * 0.65;
-            const spotY = canvas.height * 0.55;
-            const spotR = 70;
-            // Shadow di sekitar
-            const spotGrad = ctx.createRadialGradient(spotX, spotY, 0, spotX, spotY, spotR * 1.8);
-            spotGrad.addColorStop(0, 'rgba(200, 80, 40, 0.9)');
-            spotGrad.addColorStop(0.3, 'rgba(180, 60, 30, 0.8)');
-            spotGrad.addColorStop(0.6, 'rgba(160, 50, 20, 0.6)');
-            spotGrad.addColorStop(0.8, 'rgba(140, 40, 10, 0.3)');
-            spotGrad.addColorStop(1, 'rgba(120, 30, 0, 0)');
+            // 5. Great Red Spot (Bintik Merah Raksasa) - lebih detail
+            const spotX = canvas.width * 0.62;
+            const spotY = canvas.height * 0.52;
+            const spotRadius = canvas.width * 0.08;
+            // Gradasi merah-kemerahan dengan variasi
+            const spotGrad = ctx.createRadialGradient(
+                spotX - spotRadius * 0.15, spotY - spotRadius * 0.15, 0,
+                spotX, spotY, spotRadius
+            );
+            spotGrad.addColorStop(0, '#f07050');
+            spotGrad.addColorStop(0.25, '#e06040');
+            spotGrad.addColorStop(0.5, '#cc4422');
+            spotGrad.addColorStop(0.75, '#aa3322');
+            spotGrad.addColorStop(1, '#772211');
             ctx.fillStyle = spotGrad;
             ctx.beginPath();
-            ctx.ellipse(spotX, spotY, spotR, spotR * 0.6, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Detail di dalam bintik
-            const innerGrad = ctx.createRadialGradient(spotX - 10, spotY - 10, 0, spotX, spotY, spotR * 0.5);
-            innerGrad.addColorStop(0, 'rgba(230, 130, 80, 0.7)');
-            innerGrad.addColorStop(1, 'rgba(180, 70, 40, 0.5)');
-            ctx.fillStyle = innerGrad;
-            ctx.beginPath();
-            ctx.ellipse(spotX - 5, spotY - 5, spotR * 0.4, spotR * 0.25, 0.2, 0, Math.PI * 2);
+            ctx.ellipse(spotX, spotY, spotRadius, spotRadius * 0.8, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 5. Oval-oval kecil (badai)
-            for (let i = 0; i < 40; i++) {
+            // Detail di dalam bintik - pusaran kecil
+            for (let i = 0; i < 50; i++) {
+                const x = spotX + (Math.random() - 0.5) * spotRadius * 1.4;
+                const y = spotY + (Math.random() - 0.5) * spotRadius * 1.1;
+                const r = Math.random() * 12 + 2;
+                const alpha = Math.random() * 0.3 + 0.05;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(220, 80, 40, ${alpha})`;
+                ctx.fill();
+            }
+            // Highlight pada bintik
+            const hlGrad = ctx.createRadialGradient(
+                spotX - spotRadius * 0.35, spotY - spotRadius * 0.35, 0,
+                spotX, spotY, spotRadius * 0.5
+            );
+            hlGrad.addColorStop(0, 'rgba(255, 230, 210, 0.35)');
+            hlGrad.addColorStop(1, 'rgba(255, 230, 210, 0)');
+            ctx.fillStyle = hlGrad;
+            ctx.beginPath();
+            ctx.ellipse(spotX, spotY, spotRadius, spotRadius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 6. Badai-badai kecil di sekitar
+            for (let i = 0; i < 30; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
-                const rx = 20 + Math.random() * 40;
-                const ry = 10 + Math.random() * 20;
-                const rot = Math.random() * Math.PI;
-                const alpha = Math.random() * 0.3 + 0.1;
-                const grad2 = ctx.createRadialGradient(x, y, 0, x, y, rx);
-                grad2.addColorStop(0, `rgba(255,220,180,${alpha})`);
-                grad2.addColorStop(1, `rgba(200,150,100,0)`);
+                const r = Math.random() * 25 + 8;
+                const grad2 = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad2.addColorStop(0, 'rgba(255, 210, 160, 0.2)');
+                grad2.addColorStop(0.5, 'rgba(220, 180, 140, 0.1)');
+                grad2.addColorStop(1, 'rgba(220, 180, 140, 0)');
                 ctx.fillStyle = grad2;
                 ctx.beginPath();
-                ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+                ctx.arc(x, y, r, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            // 6. Tekstur halus (noise)
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const noise = (Math.random() - 0.5) * 12;
-                data[i] += noise;
-                data[i+1] += noise * 0.8;
-                data[i+2] += noise * 0.6;
+            // 7. Pita tipis tambahan (detail halus)
+            for (let i = 0; i < 100; i++) {
+                const y = Math.random() * canvas.height;
+                const h = 1 + Math.random() * 2;
+                const alpha = Math.random() * 0.12;
+                ctx.fillStyle = `rgba(200, 180, 150, ${alpha})`;
+                ctx.fillRect(0, y, canvas.width, h);
             }
-            ctx.putImageData(imageData, 0, 0);
 
             const tex = new THREE.CanvasTexture(canvas);
             tex.wrapS = THREE.RepeatWrapping;
@@ -339,16 +373,16 @@
 
                 mindarThree = new MindARThree({
                     container,
-                    imageTargetSrc: 'targets/jupiter.mind', // ← file target Jupiter
+                    imageTargetSrc: 'targets/jupiter.mind',
                 });
 
                 const { renderer, scene, camera } = mindarThree;
 
                 // ─── Pencahayaan ───────────────────────────────────
-                const ambient = new THREE.AmbientLight(0x404060, 0.5);
+                const ambient = new THREE.AmbientLight(0x404060, 0.6);
                 scene.add(ambient);
 
-                const hemiLight = new THREE.HemisphereLight(0xffdd99, 0x332211, 0.7);
+                const hemiLight = new THREE.HemisphereLight(0xffdd88, 0x332211, 0.8);
                 scene.add(hemiLight);
 
                 const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
@@ -363,13 +397,15 @@
                 const anchor = mindarThree.addAnchor(0);
 
                 // ─── Buat Jupiter (BESAR) ─────────────────────────
-                const planetRadius = 0.55; // lebih besar
+                const planetRadius = 0.5;
                 const texture = createJupiterTexture();
 
                 const material = new THREE.MeshStandardMaterial({
                     map: texture,
                     roughness: 0.6,
                     metalness: 0.05,
+                    emissive: new THREE.Color(0x441100),
+                    emissiveIntensity: 0.05,
                 });
 
                 const geometry = new THREE.SphereGeometry(planetRadius, 80, 80);
@@ -377,14 +413,14 @@
                 planetGroup = new THREE.Group();
                 planetGroup.add(planetMesh);
 
-                // ─── Atmosfer tipis (glow oranye) ─────────────────
+                // ─── Atmosfer / glow ──────────────────────────────
                 const atmosMat = new THREE.MeshBasicMaterial({
-                    color: 0xff8844,
+                    color: 0xffaa44,
                     transparent: true,
-                    opacity: 0.05,
+                    opacity: 0.08,
                     side: THREE.BackSide,
                 });
-                const atmosGeo = new THREE.SphereGeometry(planetRadius * 1.06, 48, 48);
+                const atmosGeo = new THREE.SphereGeometry(planetRadius * 1.08, 48, 48);
                 const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
                 planetGroup.add(atmosMesh);
 
@@ -401,7 +437,7 @@
                 starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
                 const starMat = new THREE.PointsMaterial({
                     color: 0xffffff,
-                    size: 0.007,
+                    size: 0.008,
                     transparent: true,
                     opacity: 0.7,
                     sizeAttenuation: true,
@@ -422,14 +458,10 @@
 
                 // ─── Animasi Loop ──────────────────────────────────
                 renderer.setAnimationLoop(() => {
-                    // Rotasi Jupiter (lebih cepat agar terlihat dinamis)
                     if (planetGroup) {
-                        planetGroup.rotation.y += 0.005;
+                        planetGroup.rotation.y += 0.006;
                     }
-
-                    // Bintang berputar pelan
                     if (stars) stars.rotation.y += 0.0001;
-
                     renderer.render(scene, camera);
                 });
 
