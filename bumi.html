@@ -39,6 +39,7 @@
             position: absolute;
         }
 
+        /* OVERLAY — hanya menampilkan "Start the adventure" dan tombol */
         #overlay {
             position: fixed;
             inset: 0;
@@ -47,49 +48,27 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 18px;
+            gap: 30px;
             padding: 32px;
             background: radial-gradient(circle at 50% 30%, #0f2027 0%, #0b0f14 70%);
             color: #e7f6f8;
             text-align: center;
         }
         #overlay h1 {
-            font-size: 26px;
+            font-size: 48px;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             background: linear-gradient(135deg, #22d3ee, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin: 0;
+            line-height: 1.2;
+            text-shadow: 0 0 40px rgba(34, 211, 238, 0.15);
         }
-        #overlay p {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #9fb4bb;
-            max-width: 340px;
-        }
-        #overlay a {
-            color: #22d3ee;
-            text-decoration: underline;
-        }
-        #overlay .target-hint {
-            background: rgba(34, 211, 238, 0.08);
-            border: 1px dashed rgba(34, 211, 238, 0.25);
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 13px;
-            max-width: 320px;
-        }
-        #overlay .target-hint code {
-            background: rgba(255, 255, 255, 0.06);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #a78bfa;
-        }
-
+        /* tombol tetap sama */
         #startBtn {
             padding: 14px 36px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             background: linear-gradient(135deg, #22d3ee, #0891b2);
             color: #06222a;
@@ -106,10 +85,15 @@
             box-shadow: 0 0 32px 4px rgba(34, 211, 238, 0.3);
         }
 
+        /* status message tetap ada tapi tersembunyi (digunakan untuk log) */
         #statusMsg {
             font-size: 12px;
             color: #6f8890;
             min-height: 20px;
+            opacity: 0; /* disembunyikan secara visual */
+            pointer-events: none;
+            position: absolute;
+            bottom: 20px;
         }
 
         #hud {
@@ -150,32 +134,20 @@
 
         @media (max-width: 480px) {
             #overlay h1 {
-                font-size: 22px;
-            }
-            #overlay p {
-                font-size: 13px;
+                font-size: 32px;
             }
             #startBtn {
                 padding: 12px 28px;
-                font-size: 15px;
+                font-size: 16px;
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- OVERLAY: hanya judul & tombol -->
     <div id="overlay">
-        <h1>🌍 Bumi &amp; Bulan</h1>
-        <p>
-            AR <strong>Image Tracking</strong> dengan MindAR + Three.js.<br>
-            Arahkan kamera ke gambar target, lihat Bumi 3D (GLB) dan Bulan muncul di atasnya.
-        </p>
-        <div class="target-hint">
-            🎯 Gunakan gambar target yang sesuai dengan <code>bumi.mind</code>.<br>
-            <span style="font-size:12px;color:#6f8890;">
-                (Pastikan file <code>targets/bumi.mind</code> dan <code>models/bumi.glb</code> ada di folder yang sama dengan HTML ini.)
-            </span>
-        </div>
+        <h1>Start the adventure</h1>
         <button id="startBtn">🚀 Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
@@ -202,7 +174,7 @@
 
         let mindarThree = null;
         let fitRAF = null;
-        let earthGroup = null; // group untuk model Bumi (GLB)
+        let earthGroup = null;
         let orbitGroup = null;
         let gltfScene = null;
 
@@ -270,14 +242,13 @@
             });
         }
 
-        // ─── Buat tekstur Bulan prosedural (sederhana) ─────────────
+        // ─── Buat tekstur Bulan prosedural ─────────────────────────
         function createMoonTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 256;
             canvas.height = 256;
             const ctx = canvas.getContext('2d');
 
-            // Warna dasar abu-abu
             const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
             grad.addColorStop(0, '#d0d0d0');
             grad.addColorStop(0.6, '#b0b0b0');
@@ -285,7 +256,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 256, 256);
 
-            // Beberapa "kawah" sederhana
             const craters = [
                 { x: 70, y: 60, r: 18 },
                 { x: 160, y: 80, r: 14 },
@@ -307,7 +277,6 @@
                 ctx.beginPath();
                 ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
                 ctx.fill();
-                // highlight
                 ctx.fillStyle = 'rgba(200,200,200,0.15)';
                 ctx.beginPath();
                 ctx.arc(c.x - c.r * 0.25, c.y - c.r * 0.25, c.r * 0.3, 0, Math.PI * 2);
@@ -328,7 +297,7 @@
 
                 mindarThree = new MindARThree({
                     container,
-                    imageTargetSrc: 'targets/bumi.mind', // ← pakai file lokal
+                    imageTargetSrc: 'targets/bumi.mind',
                 });
 
                 const { renderer, scene, camera } = mindarThree;
@@ -336,11 +305,9 @@
                 // ─── Pencahayaan ───────────────────────────────────
                 const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3a3a3a, 1.4);
                 scene.add(hemiLight);
-
                 const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
                 dirLight.position.set(1, 2, 1);
                 scene.add(dirLight);
-
                 const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
                 fillLight.position.set(-0.8, 0.6, -0.5);
                 scene.add(fillLight);
@@ -349,10 +316,8 @@
                 const anchor = mindarThree.addAnchor(0);
 
                 // ─── Load GLB Bumi ─────────────────────────────────
-                statusMsg.textContent = '⏳ Memuat model Bumi (bumi.glb)…';
-
+                statusMsg.textContent = '⏳ Memuat model Bumi…';
                 const loader = new GLTFLoader();
-                let loadedEarth = false;
 
                 try {
                     const glb = await new Promise((resolve, reject) => {
@@ -365,36 +330,28 @@
                     });
 
                     gltfScene = glb.scene;
-
-                    // === PERBESAR BUMI (GLB) ===
-                    // Ukuran referensi: sebelumnya targetScale = 0.44 / maxDim
-                    // Kita ubah menjadi 0.8 / maxDim agar lebih besar ~80% lebih besar
                     const box = new THREE.Box3().setFromObject(gltfScene);
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    const targetScale = maxDim > 0 ? 0.8 / maxDim : 1; // <-- diubah dari 0.44 ke 0.8
+                    const targetScale = maxDim > 0 ? 0.8 / maxDim : 1;
                     gltfScene.scale.set(targetScale, targetScale, targetScale);
-
                     gltfScene.position.set(0, 0, 0);
 
                     earthGroup = new THREE.Group();
-                    earthGroup.rotation.x = 0.41; // kemiringan sumbu 23.5°
+                    earthGroup.rotation.x = 0.41;
                     earthGroup.add(gltfScene);
                     anchor.group.add(earthGroup);
 
-                    loadedEarth = true;
-                    statusMsg.textContent = '✅ Model Bumi dimuat (diperbesar).';
-
+                    statusMsg.textContent = '✅ Model Bumi dimuat.';
                 } catch (err) {
                     console.warn('Gagal load bumi.glb, pakai sphere fallback:', err);
-                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai sphere fallback (diperbesar).';
+                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai fallback.';
 
-                    // === PERBESAR BUMI (fallback sphere) ===
                     const fallbackTex = await loadTextureWithFallback(
                         'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
                         '#2d7d9a'
                     );
-                    const earthRadius = 0.35; // sebelumnya 0.22 → diperbesar
+                    const earthRadius = 0.35;
                     const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
                     const earthMat = new THREE.MeshStandardMaterial({
                         map: fallbackTex,
@@ -407,7 +364,6 @@
                     earthGroup.add(fallbackMesh);
                     anchor.group.add(earthGroup);
 
-                    // Atmosphere glow (ikut membesar)
                     const glowGeo = new THREE.SphereGeometry(earthRadius * 1.07, 48, 48);
                     const glowMat = new THREE.MeshBasicMaterial({
                         color: 0x4da6ff,
@@ -417,23 +373,18 @@
                     });
                     const glowMesh = new THREE.Mesh(glowGeo, glowMat);
                     earthGroup.add(glowMesh);
-
-                    loadedEarth = true;
                 }
 
-                // ─── Bulan (tetap ukuran proporsional) ──────────────
+                // ─── Bulan ──────────────────────────────────────────
                 const moonTex = createMoonTexture();
-                const moonRadius = 0.055; // tetap
-                const moonGeo = new THREE.SphereGeometry(moonRadius, 32, 32);
+                const moonGeo = new THREE.SphereGeometry(0.055, 32, 32);
                 const moonMat = new THREE.MeshStandardMaterial({
                     map: moonTex,
                     roughness: 0.9,
                     metalness: 0.0,
                 });
                 const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-                // Jarak orbit disesuaikan agar bulan tidak terlalu dekat dengan bumi besar
-                const orbitRadius = 0.55; // sebelumnya 0.42, ditambah agar proporsional
-                moonMesh.position.set(orbitRadius, 0, 0);
+                moonMesh.position.set(0.55, 0, 0);
 
                 orbitGroup = new THREE.Group();
                 orbitGroup.rotation.x = 0.09;
@@ -441,11 +392,11 @@
                 orbitGroup.add(moonMesh);
                 anchor.group.add(orbitGroup);
 
-                // ─── Bintang-bintang (sedikit diperbesar area) ──────
+                // ─── Bintang ────────────────────────────────────────
                 const starGeo = new THREE.BufferGeometry();
                 const starCount = 200;
                 const starPos = new Float32Array(starCount * 3);
-                const spread = 3.2; // sedikit lebih luas
+                const spread = 3.2;
                 for (let i = 0; i < starCount * 3; i++) {
                     starPos[i] = (Math.random() - 0.5) * spread;
                 }
@@ -471,9 +422,7 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                // ─── Animasi loop ──────────────────────────────────
                 renderer.setAnimationLoop(() => {
-                    // Rotasi Bumi (GLB atau fallback sphere)
                     if (earthGroup) {
                         if (gltfScene) {
                             gltfScene.rotation.y += 0.004;
@@ -483,17 +432,12 @@
                             });
                         }
                     }
-
-                    // Bulan mengorbit
                     if (orbitGroup) orbitGroup.rotation.y += 0.012;
-
-                    // Bintang berputar pelan
                     stars.rotation.y += 0.0004;
-
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR aktif! (Bumi diperbesar)';
+                statusMsg.textContent = '✅ AR aktif!';
 
             } catch (err) {
                 console.error(err);
