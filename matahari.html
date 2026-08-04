@@ -170,8 +170,10 @@
         let mindarThree = null;
         let fitRAF = null;
         let sunGroup = null;
+        let sunMesh = null;
+        let glowMesh = null;
         let sunLight = null;
-        let textureLoader = new THREE.TextureLoader();
+        let stars = null;
 
         // ─── Fit "contain" untuk video & canvas ───────────────────
         function applyContainFit() {
@@ -214,89 +216,69 @@
             applyContainFit();
         }
 
-        // ─── Buat matahari dengan texture online ───────────────────
-        function createSun() {
-            const group = new THREE.Group();
+        // ─── Buat tekstur Matahari yang bagus (procedural) ──────
+        function createSunTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
 
-            // Texture matahari dari sumber online (high-res)
-            const sunMap = textureLoader.load(
-                'https://threejs.org/examples/textures/planets/sun.jpg',
-                () => console.log('✅ Texture matahari loaded'),
-                undefined,
-                () => console.warn('⚠️ Gagal load texture, pakai fallback')
-            );
+            // 1. Gradasi dasar
+            const grad = ctx.createRadialGradient(512, 512, 0, 512, 512, 512);
+            grad.addColorStop(0, '#fffbe0');
+            grad.addColorStop(0.2, '#fde047');
+            grad.addColorStop(0.5, '#facc15');
+            grad.addColorStop(0.8, '#f59e0b');
+            grad.addColorStop(1, '#b45309');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1024, 1024);
 
-            // Radius matahari
-            const radius = 0.5;
-
-            // 1. Bola utama dengan texture
-            const geo = new THREE.SphereGeometry(radius, 80, 80);
-            const mat = new THREE.MeshStandardMaterial({
-                map: sunMap,
-                emissive: new THREE.Color(0xff8800),
-                emissiveIntensity: 1.2,
-                roughness: 0.2,
-                metalness: 0.0,
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            group.add(mesh);
-
-            // 2. Lapisan glow dalam (corona) - 2 lapis
-            const glowMat1 = new THREE.MeshBasicMaterial({
-                color: 0xff6600,
-                transparent: true,
-                opacity: 0.18,
-                side: THREE.BackSide,
-            });
-            const glow1 = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.5, 48, 48), glowMat1);
-            group.add(glow1);
-
-            const glowMat2 = new THREE.MeshBasicMaterial({
-                color: 0xffaa44,
-                transparent: true,
-                opacity: 0.08,
-                side: THREE.BackSide,
-            });
-            const glow2 = new THREE.Mesh(new THREE.SphereGeometry(radius * 2.0, 48, 48), glowMat2);
-            group.add(glow2);
-
-            // 3. Partikel api berkilau (lebih banyak dan lebih terang)
-            const particleCount = 600;
-            const positions = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
-            const colors = new Float32Array(particleCount * 3);
-            for (let i = 0; i < particleCount; i++) {
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const r = radius * (1.2 + Math.random() * 1.0);
-                positions[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
-                positions[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r;
-                positions[i * 3 + 2] = Math.cos(phi) * r;
-                sizes[i] = 0.015 + Math.random() * 0.03;
-
-                // Warna: oranye hingga kuning
-                const color = new THREE.Color().setHSL(0.08 + Math.random() * 0.05, 1, 0.5 + Math.random() * 0.4);
-                colors[i * 3] = color.r;
-                colors[i * 3 + 1] = color.g;
-                colors[i * 3 + 2] = color.b;
+            // 2. Bintik-bintik api (granulasi)
+            for (let i = 0; i < 8000; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const r = Math.random() * 8 + 1;
+                const alpha = Math.random() * 0.3 + 0.05;
+                const hue = 30 + Math.random() * 20;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
+                ctx.fill();
             }
-            const particleGeo = new THREE.BufferGeometry();
-            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-            particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            const particleMat = new THREE.PointsMaterial({
-                size: 0.035,
-                transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending,
-                sizeAttenuation: true,
-                vertexColors: true,
-            });
-            const particles = new THREE.Points(particleGeo, particleMat);
-            group.add(particles);
+            // 3. Serat / garis-garis api
+            ctx.strokeStyle = 'rgba(255, 200, 50, 0.08)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 200; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const len = Math.random() * 80 + 20;
+                const angle = Math.random() * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+                ctx.stroke();
+            }
 
-            return group;
+            // 4. Beberapa titik terang (flare)
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * 1024;
+                const y = Math.random() * 1024;
+                const r = Math.random() * 12 + 3;
+                const grad2 = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad2.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                grad2.addColorStop(1, 'rgba(255, 200, 50, 0)');
+                ctx.fillStyle = grad2;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 1);
+            return tex;
         }
 
         // ─── Start AR ──────────────────────────────────────────────
@@ -311,49 +293,96 @@
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // ─── Pencahayaan lingkungan ────────────────────────
-                const ambient = new THREE.AmbientLight(0x404060);
+                // ─── Pencahayaan ambient untuk menerangi objek lain ──
+                const ambient = new THREE.AmbientLight(0x222244, 0.5);
                 scene.add(ambient);
-                const hemi = new THREE.HemisphereLight(0xffdd88, 0x080820, 0.6);
-                scene.add(hemi);
 
                 // ─── Anchor target ─────────────────────────────────
                 const anchor = mindarThree.addAnchor(0);
 
-                // ─── Buat Matahari ─────────────────────────────────
-                sunGroup = createSun();
+                // ─── Buat Matahari dengan Three.js ────────────────
+                const sunRadius = 0.4;
+                const sunTexture = createSunTexture();
+
+                // Material utama
+                const sunMaterial = new THREE.MeshStandardMaterial({
+                    map: sunTexture,
+                    emissive: new THREE.Color(0xff8800),
+                    emissiveIntensity: 0.6,
+                    roughness: 0.3,
+                    metalness: 0.0,
+                });
+
+                const geometry = new THREE.SphereGeometry(sunRadius, 64, 64);
+                sunMesh = new THREE.Mesh(geometry, sunMaterial);
+                sunGroup = new THREE.Group();
+                sunGroup.add(sunMesh);
+
+                // ─── Efek Glow / Corona ────────────────────────────
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xff6600,
+                    transparent: true,
+                    opacity: 0.15,
+                    side: THREE.BackSide,
+                });
+                const glowGeometry = new THREE.SphereGeometry(sunRadius * 1.4, 48, 48);
+                glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+                sunGroup.add(glowMesh);
+
+                // ─── Partikel api di sekitar (opsional) ────────────
+                const particleCount = 400;
+                const positions = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                for (let i = 0; i < particleCount; i++) {
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const radius = sunRadius * (1.2 + Math.random() * 0.6);
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = radius * Math.cos(phi);
+                    sizes[i] = 0.02 + Math.random() * 0.03;
+                }
+                const particleGeo = new THREE.BufferGeometry();
+                particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+                const particleMat = new THREE.PointsMaterial({
+                    color: 0xffaa44,
+                    size: 0.02,
+                    transparent: true,
+                    opacity: 0.4,
+                    blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true,
+                });
+                const particles = new THREE.Points(particleGeo, particleMat);
+                sunGroup.add(particles);
+
+                // Tambahkan ke anchor
                 anchor.group.add(sunGroup);
 
-                // ─── Point light dari matahari ─────────────────────
-                sunLight = new THREE.PointLight(0xffaa44, 3.0, 0, 0);
+                // ─── Point Light dari Matahari ─────────────────────
+                sunLight = new THREE.PointLight(0xffaa44, 2.5, 0, 0);
                 sunLight.position.set(0, 0, 0);
                 anchor.group.add(sunLight);
 
                 // ─── Bintang-bintang latar ─────────────────────────
                 const starGeo = new THREE.BufferGeometry();
-                const starCount = 400;
+                const starCount = 300;
                 const starPos = new Float32Array(starCount * 3);
-                const starColors = new Float32Array(starCount * 3);
-                const spread = 6;
-                for (let i = 0; i < starCount; i++) {
-                    starPos[i * 3] = (Math.random() - 0.5) * spread;
-                    starPos[i * 3 + 1] = (Math.random() - 0.5) * spread;
-                    starPos[i * 3 + 2] = (Math.random() - 0.5) * spread;
-                    const brightness = 0.5 + Math.random() * 0.5;
-                    starColors[i * 3] = brightness;
-                    starColors[i * 3 + 1] = brightness;
-                    starColors[i * 3 + 2] = brightness;
+                const spread = 5.0;
+                for (let i = 0; i < starCount * 3; i++) {
+                    starPos[i] = (Math.random() - 0.5) * spread;
                 }
                 starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-                starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
                 const starMat = new THREE.PointsMaterial({
-                    size: 0.012,
+                    color: 0xffffff,
+                    size: 0.008,
                     transparent: true,
-                    opacity: 0.8,
+                    opacity: 0.6,
                     sizeAttenuation: true,
-                    vertexColors: true,
                 });
-                const stars = new THREE.Points(starGeo, starMat);
+                stars = new THREE.Points(starGeo, starMat);
+                stars.position.y = 0.2;
                 anchor.group.add(stars);
 
                 // ─── Tampilkan AR ──────────────────────────────────
@@ -366,27 +395,26 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                // ─── Animasi ──────────────────────────────────────
+                // ─── Animasi Loop ──────────────────────────────────
                 renderer.setAnimationLoop(() => {
+                    // Rotasi Matahari
                     if (sunGroup) {
-                        // Rotasi utama
-                        sunGroup.rotation.y += 0.0015;
-                        // Partikel berputar lebih cepat dan dengan sumbu berbeda
-                        sunGroup.children.forEach(child => {
-                            if (child.isPoints) {
-                                child.rotation.y += 0.004;
-                                child.rotation.x += 0.001;
-                            }
-                        });
+                        sunGroup.rotation.y += 0.003;
+                        // Rotasi partikel juga
+                        particles.rotation.y += 0.001;
+                        particles.rotation.x += 0.0005;
                     }
-                    stars.rotation.y += 0.00015;
+
+                    // Bintang berputar pelan
+                    if (stars) stars.rotation.y += 0.0002;
+
                     renderer.render(scene, camera);
                 });
 
                 statusMsg.textContent = '✅ AR Matahari aktif!';
 
             } catch (err) {
-                console.error('❌ Error:', err);
+                console.error(err);
                 statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
@@ -406,7 +434,10 @@
             overlay.style.display = 'flex';
             statusMsg.textContent = '';
             sunGroup = null;
+            sunMesh = null;
+            glowMesh = null;
             sunLight = null;
+            stars = null;
         }
 
         // ─── Event listeners ──────────────────────────────────────
