@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AR 9 Planet — MindAR + Three.js + GLB</title>
+    <title>AR Bumi & Bulan — MindAR + Three.js</title>
     <script type="importmap">
         {
             "imports": {
@@ -47,35 +47,42 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            padding: 24px;
+            gap: 18px;
+            padding: 32px;
             background: radial-gradient(circle at 50% 30%, #0f2027 0%, #0b0f14 70%);
             color: #e7f6f8;
             text-align: center;
-            transition: opacity 0.3s ease;
-        }
-        #overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
         }
         #overlay h1 {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             letter-spacing: 0.5px;
             background: linear-gradient(135deg, #22d3ee, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
         }
-        #overlay .sub {
+        #overlay p {
             font-size: 14px;
+            line-height: 1.6;
             color: #9fb4bb;
-            max-width: 300px;
-            line-height: 1.5;
+            max-width: 340px;
         }
+        #overlay a {
+            color: #22d3ee;
+            text-decoration: underline;
+        }
+        #overlay .target-hint {
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px dashed rgba(34, 211, 238, 0.25);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+            max-width: 320px;
+        }
+
         #startBtn {
-            padding: 16px 44px;
-            font-size: 18px;
+            padding: 14px 36px;
+            font-size: 16px;
             font-weight: 600;
             background: linear-gradient(135deg, #22d3ee, #0891b2);
             color: #06222a;
@@ -84,7 +91,6 @@
             cursor: pointer;
             transition: transform 0.15s ease, box-shadow 0.2s ease;
             box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4);
-            margin-top: 8px;
         }
         #startBtn:active {
             transform: scale(0.96);
@@ -94,19 +100,9 @@
         }
 
         #statusMsg {
-            font-size: 13px;
+            font-size: 12px;
             color: #6f8890;
-            min-height: 22px;
-            margin-top: 4px;
-        }
-        #statusMsg.loading {
-            color: #fbbf24;
-        }
-        #statusMsg.success {
-            color: #34d399;
-        }
-        #statusMsg.error {
-            color: #f87171;
+            min-height: 20px;
         }
 
         #hud {
@@ -119,52 +115,14 @@
             align-items: center;
             justify-content: space-between;
             padding: 14px 18px;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
             pointer-events: none;
         }
-        #hud-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        #hud-left span {
+        #hud span {
             color: #fff;
             font-size: 13px;
             opacity: 0.85;
             text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-        }
-        #hud-left .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22d3ee;
-            display: inline-block;
-            animation: pulse-dot 1.4s ease-in-out infinite;
-        }
-        @keyframes pulse-dot {
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.3;
-                transform: scale(0.7);
-            }
-        }
-        #detectedList {
-            pointer-events: auto;
-            font-size: 11px;
-            color: #b0d4dd;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 12px;
-            border-radius: 999px;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(34, 211, 238, 0.15);
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         #stopBtn {
             pointer-events: auto;
@@ -185,146 +143,59 @@
 
         @media (max-width: 480px) {
             #overlay h1 {
-                font-size: 24px;
+                font-size: 22px;
+            }
+            #overlay p {
+                font-size: 13px;
             }
             #startBtn {
-                padding: 14px 32px;
-                font-size: 16px;
-            }
-            #hud-left span {
-                font-size: 11px;
-            }
-            #detectedList {
-                max-width: 100px;
-                font-size: 10px;
+                padding: 12px 28px;
+                font-size: 15px;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- Overlay minimal -->
     <div id="overlay">
-        <h1>🪐 AR 9 Planet</h1>
-        <p class="sub">Arahkan kamera ke target gambar</p>
+        <h1>🌍 Bumi &amp; Bulan</h1>
+        <p>
+            AR <strong>Image Tracking</strong> dengan MindAR + Three.js.<br>
+            Arahkan kamera ke gambar target, dan lihat Bumi serta Bulan muncul di atasnya.
+        </p>
+        <div class="target-hint">
+            🎯 Target: <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">buka/download gambar target</a>
+            — tampilkan di layar lain atau cetak.
+        </div>
         <button id="startBtn">🚀 Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
 
-    <!-- HUD -->
     <div id="hud">
-        <div id="hud-left">
-            <span class="dot"></span>
-            <span id="hudStatus">Mencari target…</span>
-        </div>
-        <span id="detectedList">—</span>
+        <span>🌍 Cari gambar target…</span>
         <button id="stopBtn">✕ Stop</button>
     </div>
 
-    <!-- Container AR -->
     <div id="container"></div>
 
     <script type="module">
         import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { MindARThree } from 'mindar-image-three';
 
-        // ─── KONFIGURASI PLANET ──────────────────────────────────────────
-        // PENTING: MindAR HANYA menerima SATU file .mind (imageTargetSrc),
-        // yang berisi banyak gambar target sekaligus, dikompilasi jadi satu.
-        // Setiap target diakses lewat INDEX ANGKA sesuai urutan saat compile,
-        // BUKAN lewat nama string. Pastikan targetIndex di bawah cocok
-        // dengan urutan gambar yang kamu upload ke compiler MindAR:
-        // https://hiukim.github.io/mind-ar-js-doc/tools/compile/
-        //
-        // Urutan upload gambar wajib SAMA PERSIS dengan urutan targetIndex ini:
-        // 0=matahari, 1=merkurius, 2=venus, 3=bumi, 4=mars,
-        // 5=jupiter, 6=saturnus, 7=uranus, 8=neptunus
-
-        const MIND_FILE = './targets/all-planets.mind'; // hasil compile gabungan 9 gambar
-
-        const PLANET_CONFIGS = [{
-            id: 'matahari',
-            targetIndex: 0,
-            label: '☀️ Matahari',
-            glbFile: './models/matahari.glb',
-            scale: 0.35,
-            rotSpeed: 0.001,
-        }, {
-            id: 'merkurius',
-            targetIndex: 1,
-            label: '☿ Merkurius',
-            glbFile: './models/merkurius.glb',
-            scale: 0.14,
-            rotSpeed: 0.006,
-        }, {
-            id: 'venus',
-            targetIndex: 2,
-            label: '♀ Venus',
-            glbFile: './models/venus.glb',
-            scale: 0.18,
-            rotSpeed: 0.002,
-        }, {
-            id: 'bumi',
-            targetIndex: 3,
-            label: '🌍 Bumi',
-            glbFile: './models/bumi.glb',
-            scale: 0.20,
-            rotSpeed: 0.004,
-        }, {
-            id: 'mars',
-            targetIndex: 4,
-            label: '♂ Mars',
-            glbFile: './models/mars.glb',
-            scale: 0.16,
-            rotSpeed: 0.005,
-        }, {
-            id: 'jupiter',
-            targetIndex: 5,
-            label: '♃ Jupiter',
-            glbFile: './models/jupiter.glb',
-            scale: 0.45,
-            rotSpeed: 0.008,
-        }, {
-            id: 'saturnus',
-            targetIndex: 6,
-            label: '♄ Saturnus',
-            glbFile: './models/saturnus.glb',
-            scale: 0.40,
-            rotSpeed: 0.007,
-        }, {
-            id: 'uranus',
-            targetIndex: 7,
-            label: '⛢ Uranus',
-            glbFile: './models/uranus.glb',
-            scale: 0.30,
-            rotSpeed: 0.005,
-        }, {
-            id: 'neptunus',
-            targetIndex: 8,
-            label: '♆ Neptunus',
-            glbFile: './models/neptunus.glb',
-            scale: 0.28,
-            rotSpeed: 0.005,
-        }, ];
-
-        // ─── DOM refs ────────────────────────────────────────────────────
+        // ─── DOM refs ───────────────────────────────────────────────
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const overlay = document.getElementById('overlay');
         const hud = document.getElementById('hud');
         const container = document.getElementById('container');
         const statusMsg = document.getElementById('statusMsg');
-        const hudStatus = document.getElementById('hudStatus');
-        const detectedList = document.getElementById('detectedList');
 
         let mindarThree = null;
         let fitRAF = null;
-        let planetModels = {};
-        let detectedTargets = new Set();
-        let isRunning = false;
+        let earthMesh = null;
+        let orbitGroup = null;
 
-        // ─── Helper: fit contain ────────────────────────────────────────
+        // ─── Fit "contain" untuk video & canvas ───────────────────
         function applyContainFit() {
             const video = container.querySelector('video');
             const canvas = container.querySelector('canvas');
@@ -365,104 +236,135 @@
             applyContainFit();
         }
 
-        // ─── Status UI ──────────────────────────────────────────────────
-        function setStatus(msg, type = '') {
-            statusMsg.textContent = msg;
-            statusMsg.className = type;
+        // ─── Texture loader dengan fallback ───────────────────────
+        const textureLoader = new THREE.TextureLoader();
+
+        function loadTextureWithFallback(url, fallbackColor) {
+            return new Promise((resolve) => {
+                textureLoader.load(
+                    url,
+                    (tex) => resolve(tex),
+                    undefined,
+                    () => {
+                        // fallback: buat texture solid
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 64;
+                        canvas.height = 64;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = fallbackColor || '#888';
+                        ctx.fillRect(0, 0, 64, 64);
+                        const fallbackTex = new THREE.CanvasTexture(canvas);
+                        resolve(fallbackTex);
+                    }
+                );
+            });
         }
 
-        function updateHUD() {
-            const count = detectedTargets.size;
-            if (count === 0) {
-                hudStatus.textContent = '🔍 Mencari target…';
-                detectedList.textContent = '—';
-            } else {
-                hudStatus.textContent = `✅ ${count} target terdeteksi`;
-                const names = Array.from(detectedTargets)
-                    .map(id => PLANET_CONFIGS.find(p => p.id === id)?.label || id)
-                    .join(', ');
-                detectedList.textContent = names;
-            }
-        }
-
-        // ─── Start AR ──────────────────────────────────────────────────
+        // ─── Start AR ──────────────────────────────────────────────
         async function startAR() {
-            if (isRunning) return;
-            isRunning = true;
-
             try {
-                setStatus('⏳ Meminta izin kamera…', 'loading');
+                statusMsg.textContent = '⏳ Meminta izin kamera…';
 
-                // ✅ FIX UTAMA: gunakan imageTargetSrc (satu file .mind gabungan),
-                // bukan array imageTargets (opsi tersebut tidak ada di MindAR).
                 mindarThree = new MindARThree({
                     container,
-                    imageTargetSrc: MIND_FILE,
+                    imageTargetSrc: "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind",
                 });
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // Lighting
-                const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3a3a3a, 1.6);
+                // ─── Pencahayaan ───────────────────────────────────
+                const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3a3a3a, 1.4);
                 scene.add(hemiLight);
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
-                dirLight.position.set(2, 3, 2);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                dirLight.position.set(1, 2, 1);
                 scene.add(dirLight);
-                const fillLight = new THREE.DirectionalLight(0xaaccff, 0.5);
-                fillLight.position.set(-1, 0.5, -1);
+
+                const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
+                fillLight.position.set(-0.8, 0.6, -0.5);
                 scene.add(fillLight);
 
-                const loader = new GLTFLoader();
+                // ─── Anchor target ─────────────────────────────────
+                const anchor = mindarThree.addAnchor(0);
 
-                setStatus('⏳ Memuat model planet…', 'loading');
+                // ─── Load textures ─────────────────────────────────
+                statusMsg.textContent = '⏳ Memuat tekstur Bumi & Bulan…';
 
-                const loadPromises = PLANET_CONFIGS.map(async (config) => {
-                    try {
-                        // ✅ FIX: addAnchor menerima INDEX ANGKA (targetIndex),
-                        // bukan string id.
-                        const anchor = mindarThree.addAnchor(config.targetIndex);
-                        const gltf = await loader.loadAsync(config.glbFile);
-                        const model = gltf.scene;
-                        model.scale.set(config.scale, config.scale, config.scale);
-                        model.rotation.y = Math.random() * Math.PI * 2;
-                        anchor.group.add(model);
+                const [earthTex, moonTex] = await Promise.all([
+                    loadTextureWithFallback(
+                        'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+                        '#2d7d9a'
+                    ),
+                    loadTextureWithFallback(
+                        'https://threejs.org/examples/textures/planets/moon_1024.jpg',
+                        '#b0b0b0'
+                    ),
+                ]);
 
-                        planetModels[config.id] = {
-                            mesh: model,
-                            rotSpeed: config.rotSpeed,
-                            label: config.label,
-                            anchor: anchor,
-                        };
-                        console.log(`✅ ${config.id} (index ${config.targetIndex}) loaded`);
-                    } catch (err) {
-                        console.error(`❌ Gagal load ${config.id}:`, err);
-                        // Fallback sphere
-                        try {
-                            const anchor = mindarThree.addAnchor(config.targetIndex);
-                            const geo = new THREE.SphereGeometry(config.scale * 0.8, 24, 24);
-                            const mat = new THREE.MeshStandardMaterial({
-                                color: 0x888888,
-                                roughness: 0.6,
-                                metalness: 0.1,
-                            });
-                            const fallback = new THREE.Mesh(geo, mat);
-                            anchor.group.add(fallback);
-                            planetModels[config.id] = {
-                                mesh: fallback,
-                                rotSpeed: 0.003,
-                                label: config.label + ' (fallback)',
-                                anchor: anchor,
-                                isFallback: true,
-                            };
-                            console.warn(`⚠️ Fallback untuk ${config.id}`);
-                        } catch (_) { /* ignore */ }
-                    }
+                // ─── Bumi (dengan kemiringan sumbu 23.5°) ─────────
+                const earthGroup = new THREE.Group();
+                earthGroup.rotation.x = 0.41; // ~23.5°
+                anchor.group.add(earthGroup);
+
+                const earthGeo = new THREE.SphereGeometry(0.22, 64, 64);
+                const earthMat = new THREE.MeshStandardMaterial({
+                    map: earthTex,
+                    roughness: 0.5,
+                    metalness: 0.05,
                 });
+                earthMesh = new THREE.Mesh(earthGeo, earthMat);
+                earthGroup.add(earthMesh);
 
-                await Promise.allSettled(loadPromises);
+                // ─── Atmosphere glow (lapisan tipis) ──────────────
+                const glowGeo = new THREE.SphereGeometry(0.235, 48, 48);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: 0x4da6ff,
+                    transparent: true,
+                    opacity: 0.13,
+                    side: THREE.BackSide,
+                });
+                const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+                earthGroup.add(glowMesh);
 
-                // Sembunyikan overlay, tampilkan AR
-                overlay.classList.add('hidden');
+                // ─── Bulan ──────────────────────────────────────────
+                // Orbit group dengan sedikit kemiringan (5°)
+                orbitGroup = new THREE.Group();
+                orbitGroup.rotation.x = 0.09;
+                orbitGroup.rotation.z = 0.04;
+                anchor.group.add(orbitGroup);
+
+                const moonGeo = new THREE.SphereGeometry(0.055, 32, 32);
+                const moonMat = new THREE.MeshStandardMaterial({
+                    map: moonTex,
+                    roughness: 0.9,
+                    metalness: 0.0,
+                });
+                const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+                moonMesh.position.set(0.42, 0, 0);
+                orbitGroup.add(moonMesh);
+
+                // ─── Tambahan: bintang-bintang kecil di sekitar ──
+                // (opsional, hanya untuk estetika)
+                const starGeo = new THREE.BufferGeometry();
+                const starCount = 160;
+                const starPos = new Float32Array(starCount * 3);
+                for (let i = 0; i < starCount * 3; i++) {
+                    starPos[i] = (Math.random() - 0.5) * 2.8;
+                }
+                starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                const starMat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.005,
+                    transparent: true,
+                    opacity: 0.6,
+                    sizeAttenuation: true,
+                });
+                const stars = new THREE.Points(starGeo, starMat);
+                stars.position.y = 0.15;
+                anchor.group.add(stars);
+
+                // ─── Tampilkan AR ──────────────────────────────────
+                overlay.style.display = 'none';
                 container.style.display = 'block';
                 hud.style.display = 'flex';
 
@@ -471,97 +373,49 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                let frameCount = 0;
+                // ─── Animasi loop ──────────────────────────────────
                 renderer.setAnimationLoop(() => {
-                    frameCount++;
+                    // Bumi berotasi pada sumbunya
+                    if (earthMesh) earthMesh.rotation.y += 0.004;
 
-                    for (const [id, data] of Object.entries(planetModels)) {
-                        if (data.mesh) {
-                            data.mesh.rotation.y += data.rotSpeed || 0.003;
-                        }
-                    }
+                    // Bulan mengorbit
+                    if (orbitGroup) orbitGroup.rotation.y += 0.012;
 
-                    if (frameCount % 30 === 0) {
-                        const newDetected = new Set();
-                        for (const [id, data] of Object.entries(planetModels)) {
-                            const anchor = data.anchor;
-                            if (anchor && anchor.group && anchor.group.visible) {
-                                let hasVisible = false;
-                                for (const child of anchor.group.children) {
-                                    if (child.visible) {
-                                        hasVisible = true;
-                                        break;
-                                    }
-                                }
-                                if (hasVisible) newDetected.add(id);
-                            }
-                        }
-                        const changed = detectedTargets.size !== newDetected.size ||
-                            ![...detectedTargets].every(id => newDetected.has(id));
-                        if (changed) {
-                            detectedTargets = newDetected;
-                            updateHUD();
-                        }
-                    }
+                    // Bintang berputar pelan
+                    stars.rotation.y += 0.0004;
 
                     renderer.render(scene, camera);
                 });
 
-                setStatus('✅ AR aktif! ' + PLANET_CONFIGS.length + ' target siap.', 'success');
-                updateHUD();
+                statusMsg.textContent = '✅ AR aktif!';
 
             } catch (err) {
                 console.error(err);
-                setStatus('❌ Gagal: ' + (err.message || 'Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.'), 'error');
-                isRunning = false;
+                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
-        // ─── Stop AR ────────────────────────────────────────────────────
+        // ─── Stop AR ───────────────────────────────────────────────
         async function stopAR() {
-            isRunning = false;
             window.removeEventListener('resize', onWindowResize);
             if (fitRAF) cancelAnimationFrame(fitRAF);
-
             if (mindarThree) {
                 try {
                     await mindarThree.stop();
-                } catch (_) { /* ignore */ }
-                if (mindarThree.renderer) {
-                    mindarThree.renderer.setAnimationLoop(null);
-                }
+                } catch (_) {}
+                mindarThree.renderer.setAnimationLoop(null);
             }
-
-            planetModels = {};
-            detectedTargets.clear();
-
             container.style.display = 'none';
             hud.style.display = 'none';
-            overlay.classList.remove('hidden');
-            setStatus('', '');
-            hudStatus.textContent = '—';
-            detectedList.textContent = '—';
-
-            mindarThree = null;
+            overlay.style.display = 'flex';
+            statusMsg.textContent = '';
+            earthMesh = null;
+            orbitGroup = null;
         }
 
-        // ─── Event listeners ────────────────────────────────────────────
+        // ─── Event listeners ──────────────────────────────────────
         startBtn.addEventListener('click', startAR);
         stopBtn.addEventListener('click', stopAR);
-
-        window.addEventListener('beforeunload', async () => {
-            if (mindarThree) {
-                try { await mindarThree.stop(); } catch (_) {}
-            }
-        });
-
-        // ─── Initial status ─────────────────────────────────────────────
-        console.log('🪐 Start to Adventure!');
-        console.log(`📦 ${PLANET_CONFIGS.length} target dikonfigurasi (dari 1 file .mind gabungan):`);
-        PLANET_CONFIGS.forEach(p => {
-            console.log(`  - index ${p.targetIndex}: ${p.id} → ${p.glbFile}`);
-        });
-        setStatus(`Tekan "Mulai AR" untuk memulai`, '');
     </script>
 </body>
 </html>
