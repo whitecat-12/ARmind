@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AR Matahari — MindAR + Three.js</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: #0b0f14;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        #container {
+            position: fixed;
+            inset: 0;
+            display: none;
+            background: #000;
+            overflow: hidden;
+        }
+        #container video,
+        #container canvas {
+            position: absolute;
+        }
+
+        /* OVERLAY — hanya menampilkan "Start the adventure" dan tombol */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 32px;
+            background: radial-gradient(circle at 50% 30%, #0f2027 0%, #0b0f14 70%);
+            color: #e7f6f8;
+            text-align: center;
+        }
+        #overlay h1 {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            line-height: 1.2;
+            text-shadow: 0 0 40px rgba(251, 191, 36, 0.2);
+        }
+        #startBtn {
+            padding: 14px 36px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #1e1b0a;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+        }
+        #startBtn:active {
+            transform: scale(0.96);
+        }
+        #startBtn:hover {
+            box-shadow: 0 0 32px 4px rgba(251, 191, 36, 0.3);
+        }
+
+        #statusMsg {
+            font-size: 12px;
+            color: #6f8890;
+            min-height: 20px;
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            bottom: 20px;
+        }
+
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+            pointer-events: none;
+        }
+        #hud span {
+            color: #fff;
+            font-size: 13px;
+            opacity: 0.85;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+        }
+        #stopBtn {
+            pointer-events: auto;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 999px;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s;
+        }
+        #stopBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            #overlay h1 {
+                font-size: 32px;
+            }
+            #startBtn {
+                padding: 12px 28px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- OVERLAY: hanya judul & tombol -->
+    <div id="overlay">
+        <h1>Start the adventure</h1>
+        <button id="startBtn">🚀 Mulai AR</button>
+        <p id="statusMsg"></p>
+    </div>
+
+    <div id="hud">
+        <span>☀️ Cari gambar target…</span>
+        <button id="stopBtn">✕ Stop</button>
+    </div>
+
+    <div id="container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { MindARThree } from 'mindar-image-three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // ─── DOM refs ───────────────────────────────────────────────
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const overlay = document.getElementById('overlay');
+        const hud = document.getElementById('hud');
+        const container = document.getElementById('container');
+        const statusMsg = document.getElementById('statusMsg');
+
+        let mindarThree = null;
+        let fitRAF = null;
+        let sunGroup = null;
+        let gltfScene = null;
+        let sunLight = null;
+
+        // ─── Fit "contain" untuk video & canvas ───────────────────
+        function applyContainFit() {
+            const video = container.querySelector('video');
+            const canvas = container.querySelector('canvas');
+            if (!video || !canvas || !video.videoWidth) return false;
+
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const containerRatio = cw / ch;
+
+            let w, h;
+            if (videoRatio > containerRatio) {
+                w = cw;
+                h = cw / videoRatio;
+            } else {
+                h = ch;
+                w = ch * videoRatio;
+            }
+            const left = (cw - w) / 2;
+            const top = (ch - h) / 2;
+
+            [video, canvas].forEach((el) => {
+                el.style.width = `${w}px`;
+                el.style.height = `${h}px`;
+                el.style.left = `${left}px`;
+                el.style.top = `${top}px`;
+            });
+            return true;
+        }
+
+        function waitAndFit() {
+            if (!applyContainFit()) {
+                fitRAF = requestAnimationFrame(waitAndFit);
+            }
+        }
+
+        function onWindowResize() {
+            applyContainFit();
+        }
+
+        // ─── Buat tekstur Matahari (fallback) ──────────────────────
+        function createSunTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Gradasi oranye-kuning
+            const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+            grad.addColorStop(0, '#fff8e0');
+            grad.addColorStop(0.3, '#fbbf24');
+            grad.addColorStop(0.7, '#f59e0b');
+            grad.addColorStop(1, '#b45309');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Tambahkan tekstur "api" dengan titik-titik acak
+            for (let i = 0; i < 3000; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const r = Math.random() * 6 + 1;
+                const alpha = Math.random() * 0.3 + 0.1;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 200, 50, ${alpha})`;
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 1);
+            return tex;
+        }
+
+        // ─── Start AR ──────────────────────────────────────────────
+        async function startAR() {
+            try {
+                statusMsg.textContent = '⏳ Meminta izin kamera…';
+
+                mindarThree = new MindARThree({
+                    container,
+                    imageTargetSrc: 'targets/matahari.mind', // ← file target matahari
+                });
+
+                const { renderer, scene, camera } = mindarThree;
+
+                // ─── Pencahayaan (soft, karena matahari akan memancarkan cahaya) ──
+                const hemiLight = new THREE.HemisphereLight(0x443322, 0x111111, 0.6);
+                scene.add(hemiLight);
+
+                // ─── Anchor target ─────────────────────────────────
+                const anchor = mindarThree.addAnchor(0);
+
+                // ─── Load GLB Matahari ─────────────────────────────
+                statusMsg.textContent = '⏳ Memuat model Matahari…';
+                const loader = new GLTFLoader();
+
+                try {
+                    const glb = await new Promise((resolve, reject) => {
+                        loader.load(
+                            'models/matahari.glb',
+                            (gltf) => resolve(gltf),
+                            undefined,
+                            (err) => reject(err)
+                        );
+                    });
+
+                    gltfScene = glb.scene;
+                    const box = new THREE.Box3().setFromObject(gltfScene);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const targetScale = maxDim > 0 ? 0.8 / maxDim : 1;
+                    gltfScene.scale.set(targetScale, targetScale, targetScale);
+                    gltfScene.position.set(0, 0, 0);
+
+                    sunGroup = new THREE.Group();
+                    sunGroup.add(gltfScene);
+                    anchor.group.add(sunGroup);
+
+                    statusMsg.textContent = '✅ Model Matahari dimuat.';
+                } catch (err) {
+                    console.warn('Gagal load matahari.glb, pakai sphere fallback:', err);
+                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai fallback.';
+
+                    // Fallback: bola dengan tekstur matahari
+                    const sunTex = createSunTexture();
+                    const sunRadius = 0.4;
+                    const sunGeo = new THREE.SphereGeometry(sunRadius, 64, 64);
+                    const sunMat = new THREE.MeshStandardMaterial({
+                        map: sunTex,
+                        emissive: new THREE.Color(0xffaa00),
+                        emissiveIntensity: 0.6,
+                        roughness: 0.4,
+                    });
+                    const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+                    sunGroup = new THREE.Group();
+                    sunGroup.add(sunMesh);
+                    anchor.group.add(sunGroup);
+
+                    // Glow (corona) sebagai sphere transparan
+                    const glowGeo = new THREE.SphereGeometry(sunRadius * 1.3, 48, 48);
+                    const glowMat = new THREE.MeshBasicMaterial({
+                        color: 0xff8800,
+                        transparent: true,
+                        opacity: 0.15,
+                        side: THREE.BackSide,
+                    });
+                    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+                    sunGroup.add(glowMesh);
+                }
+
+                // ─── Tambahkan Point Light dari matahari ──────────
+                sunLight = new THREE.PointLight(0xffaa44, 1.5, 0, 0);
+                sunLight.position.set(0, 0, 0);
+                anchor.group.add(sunLight);
+
+                // ─── Bintang-bintang di sekitar ────────────────────
+                const starGeo = new THREE.BufferGeometry();
+                const starCount = 200;
+                const starPos = new Float32Array(starCount * 3);
+                const spread = 3.5;
+                for (let i = 0; i < starCount * 3; i++) {
+                    starPos[i] = (Math.random() - 0.5) * spread;
+                }
+                starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                const starMat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.006,
+                    transparent: true,
+                    opacity: 0.6,
+                    sizeAttenuation: true,
+                });
+                const stars = new THREE.Points(starGeo, starMat);
+                stars.position.y = 0.15;
+                anchor.group.add(stars);
+
+                // ─── Tampilkan AR ──────────────────────────────────
+                overlay.style.display = 'none';
+                container.style.display = 'block';
+                hud.style.display = 'flex';
+
+                await mindarThree.start();
+
+                waitAndFit();
+                window.addEventListener('resize', onWindowResize);
+
+                renderer.setAnimationLoop(() => {
+                    // Rotasi Matahari
+                    if (sunGroup) {
+                        if (gltfScene) {
+                            gltfScene.rotation.y += 0.002;
+                        } else {
+                            sunGroup.children.forEach(child => {
+                                if (child.isMesh) child.rotation.y += 0.002;
+                            });
+                        }
+                    }
+
+                    // Bintang berputar pelan
+                    stars.rotation.y += 0.0003;
+
+                    renderer.render(scene, camera);
+                });
+
+                statusMsg.textContent = '✅ AR Matahari aktif!';
+
+            } catch (err) {
+                console.error(err);
+                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+            }
+        }
+
+        // ─── Stop AR ───────────────────────────────────────────────
+        async function stopAR() {
+            window.removeEventListener('resize', onWindowResize);
+            if (fitRAF) cancelAnimationFrame(fitRAF);
+            if (mindarThree) {
+                try {
+                    await mindarThree.stop();
+                } catch (_) {}
+                mindarThree.renderer.setAnimationLoop(null);
+            }
+            container.style.display = 'none';
+            hud.style.display = 'none';
+            overlay.style.display = 'flex';
+            statusMsg.textContent = '';
+            sunGroup = null;
+            gltfScene = null;
+            sunLight = null;
+        }
+
+        // ─── Event listeners ──────────────────────────────────────
+        startBtn.addEventListener('click', startAR);
+        stopBtn.addEventListener('click', stopAR);
+    </script>
+</body>
+</html>
