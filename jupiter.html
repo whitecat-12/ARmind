@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AR Jupiter — MindAR + Three.js</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: #0b0f14;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        #container {
+            position: fixed;
+            inset: 0;
+            display: none;
+            background: #000;
+            overflow: hidden;
+        }
+        #container video,
+        #container canvas {
+            position: absolute;
+        }
+
+        #overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 32px;
+            background: radial-gradient(circle at 50% 30%, #1a1a24 0%, #0b0f14 70%);
+            color: #e7f6f8;
+            text-align: center;
+        }
+        #overlay h1 {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            line-height: 1.2;
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.15);
+        }
+        #startBtn {
+            padding: 14px 36px;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1a1a1a;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3);
+        }
+        #startBtn:active {
+            transform: scale(0.96);
+        }
+        #startBtn:hover {
+            box-shadow: 0 0 32px 4px rgba(245, 158, 11, 0.3);
+        }
+
+        #statusMsg {
+            font-size: 12px;
+            color: #6f8890;
+            min-height: 20px;
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            bottom: 20px;
+        }
+
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent);
+            pointer-events: none;
+        }
+        #hud span {
+            color: #fff;
+            font-size: 13px;
+            opacity: 0.85;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+        }
+        #stopBtn {
+            pointer-events: auto;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 999px;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s;
+        }
+        #stopBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 480px) {
+            #overlay h1 {
+                font-size: 32px;
+            }
+            #startBtn {
+                padding: 12px 28px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1>Start the adventure</h1>
+        <button id="startBtn">🚀 Mulai AR</button>
+        <p id="statusMsg"></p>
+    </div>
+
+    <div id="hud">
+        <span>♃ Cari gambar target…</span>
+        <button id="stopBtn">✕ Stop</button>
+    </div>
+
+    <div id="container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { MindARThree } from 'mindar-image-three';
+
+        // ─── DOM refs ───────────────────────────────────────────────
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const overlay = document.getElementById('overlay');
+        const hud = document.getElementById('hud');
+        const container = document.getElementById('container');
+        const statusMsg = document.getElementById('statusMsg');
+
+        let mindarThree = null;
+        let fitRAF = null;
+        let planetGroup = null;
+        let planetMesh = null;
+        let stars = null;
+
+        // ─── Fit "contain" untuk video & canvas ───────────────────
+        function applyContainFit() {
+            const video = container.querySelector('video');
+            const canvas = container.querySelector('canvas');
+            if (!video || !canvas || !video.videoWidth) return false;
+
+            const cw = container.clientWidth;
+            const ch = container.clientHeight;
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const containerRatio = cw / ch;
+
+            let w, h;
+            if (videoRatio > containerRatio) {
+                w = cw;
+                h = cw / videoRatio;
+            } else {
+                h = ch;
+                w = ch * videoRatio;
+            }
+            const left = (cw - w) / 2;
+            const top = (ch - h) / 2;
+
+            [video, canvas].forEach((el) => {
+                el.style.width = `${w}px`;
+                el.style.height = `${h}px`;
+                el.style.left = `${left}px`;
+                el.style.top = `${top}px`;
+            });
+            return true;
+        }
+
+        function waitAndFit() {
+            if (!applyContainFit()) {
+                fitRAF = requestAnimationFrame(waitAndFit);
+            }
+        }
+
+        function onWindowResize() {
+            applyContainFit();
+        }
+
+        // ─── Buat tekstur Jupiter (procedural) ─────────────────────
+        function createJupiterTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Warna dasar - gradasi oranye-coklat
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#c8926a');
+            grad.addColorStop(0.2, '#d4a07a');
+            grad.addColorStop(0.4, '#e0b08a');
+            grad.addColorStop(0.6, '#c8906a');
+            grad.addColorStop(0.8, '#b07858');
+            grad.addColorStop(1, '#a06848');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Pita-pita horizontal (cloud bands)
+            const bands = [
+                { y: 0.05, h: 0.04, color: 'rgba(180, 130, 90, 0.5)' },
+                { y: 0.12, h: 0.06, color: 'rgba(210, 170, 130, 0.4)' },
+                { y: 0.22, h: 0.05, color: 'rgba(160, 110, 80, 0.5)' },
+                { y: 0.30, h: 0.08, color: 'rgba(230, 200, 170, 0.3)' },
+                { y: 0.42, h: 0.04, color: 'rgba(140, 90, 60, 0.6)' },
+                { y: 0.50, h: 0.10, color: 'rgba(240, 210, 180, 0.25)' },
+                { y: 0.62, h: 0.05, color: 'rgba(150, 100, 70, 0.5)' },
+                { y: 0.72, h: 0.06, color: 'rgba(220, 180, 150, 0.3)' },
+                { y: 0.82, h: 0.04, color: 'rgba(170, 120, 90, 0.5)' },
+                { y: 0.90, h: 0.06, color: 'rgba(200, 160, 130, 0.4)' },
+            ];
+
+            bands.forEach((b) => {
+                const yPos = b.y * canvas.height;
+                const height = b.h * canvas.height;
+                ctx.fillStyle = b.color;
+                ctx.fillRect(0, yPos, canvas.width, height);
+            });
+
+            // 3. Detail turbulensi di pita (swirls)
+            for (let i = 0; i < 800; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.random() * 15 + 3;
+                const alpha = Math.random() * 0.2 + 0.05;
+                const hue = 30 + Math.random() * 20;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${hue}, 60%, 60%, ${alpha})`;
+                ctx.fill();
+            }
+
+            // 4. Great Red Spot (Bintik Merah Raksasa)
+            const spotX = canvas.width * 0.6;
+            const spotY = canvas.height * 0.55;
+            const spotRadius = canvas.width * 0.07;
+            // Gradasi merah-kemerahan
+            const spotGrad = ctx.createRadialGradient(
+                spotX - spotRadius * 0.2, spotY - spotRadius * 0.2, 0,
+                spotX, spotY, spotRadius
+            );
+            spotGrad.addColorStop(0, '#e06040');
+            spotGrad.addColorStop(0.3, '#cc4422');
+            spotGrad.addColorStop(0.7, '#aa3322');
+            spotGrad.addColorStop(1, '#882211');
+            ctx.fillStyle = spotGrad;
+            ctx.beginPath();
+            ctx.ellipse(spotX, spotY, spotRadius, spotRadius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Detail di dalam bintik
+            for (let i = 0; i < 30; i++) {
+                const x = spotX + (Math.random() - 0.5) * spotRadius * 1.2;
+                const y = spotY + (Math.random() - 0.5) * spotRadius * 0.9;
+                const r = Math.random() * 8 + 2;
+                const alpha = Math.random() * 0.3 + 0.1;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(200, 80, 40, ${alpha})`;
+                ctx.fill();
+            }
+            // Highlight pada bintik
+            const hlGrad = ctx.createRadialGradient(
+                spotX - spotRadius * 0.3, spotY - spotRadius * 0.3, 0,
+                spotX, spotY, spotRadius * 0.5
+            );
+            hlGrad.addColorStop(0, 'rgba(255, 220, 200, 0.3)');
+            hlGrad.addColorStop(1, 'rgba(255, 220, 200, 0)');
+            ctx.fillStyle = hlGrad;
+            ctx.beginPath();
+            ctx.ellipse(spotX, spotY, spotRadius, spotRadius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Pita-pita tipis tambahan (detail)
+            for (let i = 0; i < 60; i++) {
+                const y = Math.random() * canvas.height;
+                const h = 1 + Math.random() * 3;
+                const alpha = Math.random() * 0.15;
+                ctx.fillStyle = `rgba(200, 180, 150, ${alpha})`;
+                ctx.fillRect(0, y, canvas.width, h);
+            }
+
+            // 6. Beberapa "badai" kecil
+            for (let i = 0; i < 20; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const r = Math.random() * 20 + 5;
+                const grad2 = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad2.addColorStop(0, 'rgba(255, 200, 150, 0.2)');
+                grad2.addColorStop(0.6, 'rgba(200, 150, 100, 0.1)');
+                grad2.addColorStop(1, 'rgba(200, 150, 100, 0)');
+                ctx.fillStyle = grad2;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 1);
+            return tex;
+        }
+
+        // ─── Start AR ──────────────────────────────────────────────
+        async function startAR() {
+            try {
+                statusMsg.textContent = '⏳ Meminta izin kamera…';
+
+                mindarThree = new MindARThree({
+                    container,
+                    imageTargetSrc: 'targets/jupiter.mind', // ← file target Jupiter
+                });
+
+                const { renderer, scene, camera } = mindarThree;
+
+                // ─── Pencahayaan ───────────────────────────────────
+                const ambient = new THREE.AmbientLight(0x404060, 0.6);
+                scene.add(ambient);
+
+                const hemiLight = new THREE.HemisphereLight(0xffdd88, 0x332211, 0.8);
+                scene.add(hemiLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+                dirLight.position.set(2, 3, 2);
+                scene.add(dirLight);
+
+                const fillLight = new THREE.DirectionalLight(0xccaa88, 0.5);
+                fillLight.position.set(-2, 0.5, -1);
+                scene.add(fillLight);
+
+                // ─── Anchor target ─────────────────────────────────
+                const anchor = mindarThree.addAnchor(0);
+
+                // ─── Buat Jupiter (BESAR) ─────────────────────────
+                const planetRadius = 0.5; // Jupiter lebih besar
+                const texture = createJupiterTexture();
+
+                const material = new THREE.MeshStandardMaterial({
+                    map: texture,
+                    roughness: 0.6,
+                    metalness: 0.05,
+                });
+
+                const geometry = new THREE.SphereGeometry(planetRadius, 80, 80);
+                planetMesh = new THREE.Mesh(geometry, material);
+                planetGroup = new THREE.Group();
+                planetGroup.add(planetMesh);
+
+                // ─── Atmosfer / glow ──────────────────────────────
+                const atmosMat = new THREE.MeshBasicMaterial({
+                    color: 0xffaa44,
+                    transparent: true,
+                    opacity: 0.08,
+                    side: THREE.BackSide,
+                });
+                const atmosGeo = new THREE.SphereGeometry(planetRadius * 1.08, 48, 48);
+                const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
+                planetGroup.add(atmosMesh);
+
+                anchor.group.add(planetGroup);
+
+                // ─── Bintang-bintang latar ─────────────────────────
+                const starGeo = new THREE.BufferGeometry();
+                const starCount = 500;
+                const starPos = new Float32Array(starCount * 3);
+                const spread = 7.0;
+                for (let i = 0; i < starCount * 3; i++) {
+                    starPos[i] = (Math.random() - 0.5) * spread;
+                }
+                starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+                const starMat = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.008,
+                    transparent: true,
+                    opacity: 0.7,
+                    sizeAttenuation: true,
+                });
+                stars = new THREE.Points(starGeo, starMat);
+                stars.position.y = 0.2;
+                anchor.group.add(stars);
+
+                // ─── Tampilkan AR ──────────────────────────────────
+                overlay.style.display = 'none';
+                container.style.display = 'block';
+                hud.style.display = 'flex';
+
+                await mindarThree.start();
+
+                waitAndFit();
+                window.addEventListener('resize', onWindowResize);
+
+                // ─── Animasi Loop ──────────────────────────────────
+                renderer.setAnimationLoop(() => {
+                    // Rotasi Jupiter (lebih cepat agar pita terlihat)
+                    if (planetGroup) {
+                        planetGroup.rotation.y += 0.006;
+                    }
+
+                    // Bintang berputar pelan
+                    if (stars) stars.rotation.y += 0.0001;
+
+                    renderer.render(scene, camera);
+                });
+
+                statusMsg.textContent = '✅ AR Jupiter aktif!';
+
+            } catch (err) {
+                console.error(err);
+                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+            }
+        }
+
+        // ─── Stop AR ───────────────────────────────────────────────
+        async function stopAR() {
+            window.removeEventListener('resize', onWindowResize);
+            if (fitRAF) cancelAnimationFrame(fitRAF);
+            if (mindarThree) {
+                try {
+                    await mindarThree.stop();
+                } catch (_) {}
+                mindarThree.renderer.setAnimationLoop(null);
+            }
+            container.style.display = 'none';
+            hud.style.display = 'none';
+            overlay.style.display = 'flex';
+            statusMsg.textContent = '';
+            planetGroup = null;
+            planetMesh = null;
+            stars = null;
+        }
+
+        // ─── Event listeners ──────────────────────────────────────
+        startBtn.addEventListener('click', startAR);
+        stopBtn.addEventListener('click', stopAR);
+    </script>
+</body>
+</html>
