@@ -366,40 +366,36 @@
 
                     gltfScene = glb.scene;
 
-                    // Skala ulang agar proporsional dengan sistem yang ada
-                    // Ukuran referensi: Bumi sphere radius 0.22 → GLB diskalakan
+                    // === PERBESAR BUMI (GLB) ===
+                    // Ukuran referensi: sebelumnya targetScale = 0.44 / maxDim
+                    // Kita ubah menjadi 0.8 / maxDim agar lebih besar ~80% lebih besar
                     const box = new THREE.Box3().setFromObject(gltfScene);
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
-                    // target radius ~0.22, jadi skala = 0.22 / (maxDim/2) = 0.44 / maxDim
-                    const targetScale = maxDim > 0 ? 0.44 / maxDim : 1;
+                    const targetScale = maxDim > 0 ? 0.8 / maxDim : 1; // <-- diubah dari 0.44 ke 0.8
                     gltfScene.scale.set(targetScale, targetScale, targetScale);
 
-                    // Posisikan di tengah
                     gltfScene.position.set(0, 0, 0);
 
-                    // Rotasi awal agar sesuai (jika model perlu disesuaikan)
-                    // gltfScene.rotation.x = 0.41; // opsional
-
-                    // Simpan referensi untuk animasi
                     earthGroup = new THREE.Group();
                     earthGroup.rotation.x = 0.41; // kemiringan sumbu 23.5°
                     earthGroup.add(gltfScene);
                     anchor.group.add(earthGroup);
 
                     loadedEarth = true;
-                    statusMsg.textContent = '✅ Model Bumi dimuat.';
+                    statusMsg.textContent = '✅ Model Bumi dimuat (diperbesar).';
 
                 } catch (err) {
                     console.warn('Gagal load bumi.glb, pakai sphere fallback:', err);
-                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai sphere fallback.';
+                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai sphere fallback (diperbesar).';
 
-                    // Fallback: Bumi sebagai sphere dengan texture
+                    // === PERBESAR BUMI (fallback sphere) ===
                     const fallbackTex = await loadTextureWithFallback(
                         'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
                         '#2d7d9a'
                     );
-                    const earthGeo = new THREE.SphereGeometry(0.22, 64, 64);
+                    const earthRadius = 0.35; // sebelumnya 0.22 → diperbesar
+                    const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
                     const earthMat = new THREE.MeshStandardMaterial({
                         map: fallbackTex,
                         roughness: 0.5,
@@ -411,8 +407,8 @@
                     earthGroup.add(fallbackMesh);
                     anchor.group.add(earthGroup);
 
-                    // Atmosphere glow
-                    const glowGeo = new THREE.SphereGeometry(0.235, 48, 48);
+                    // Atmosphere glow (ikut membesar)
+                    const glowGeo = new THREE.SphereGeometry(earthRadius * 1.07, 48, 48);
                     const glowMat = new THREE.MeshBasicMaterial({
                         color: 0x4da6ff,
                         transparent: true,
@@ -425,16 +421,19 @@
                     loadedEarth = true;
                 }
 
-                // ─── Bulan ──────────────────────────────────────────
+                // ─── Bulan (tetap ukuran proporsional) ──────────────
                 const moonTex = createMoonTexture();
-                const moonGeo = new THREE.SphereGeometry(0.055, 32, 32);
+                const moonRadius = 0.055; // tetap
+                const moonGeo = new THREE.SphereGeometry(moonRadius, 32, 32);
                 const moonMat = new THREE.MeshStandardMaterial({
                     map: moonTex,
                     roughness: 0.9,
                     metalness: 0.0,
                 });
                 const moonMesh = new THREE.Mesh(moonGeo, moonMat);
-                moonMesh.position.set(0.42, 0, 0);
+                // Jarak orbit disesuaikan agar bulan tidak terlalu dekat dengan bumi besar
+                const orbitRadius = 0.55; // sebelumnya 0.42, ditambah agar proporsional
+                moonMesh.position.set(orbitRadius, 0, 0);
 
                 orbitGroup = new THREE.Group();
                 orbitGroup.rotation.x = 0.09;
@@ -442,17 +441,18 @@
                 orbitGroup.add(moonMesh);
                 anchor.group.add(orbitGroup);
 
-                // ─── Bintang-bintang ────────────────────────────────
+                // ─── Bintang-bintang (sedikit diperbesar area) ──────
                 const starGeo = new THREE.BufferGeometry();
-                const starCount = 160;
+                const starCount = 200;
                 const starPos = new Float32Array(starCount * 3);
+                const spread = 3.2; // sedikit lebih luas
                 for (let i = 0; i < starCount * 3; i++) {
-                    starPos[i] = (Math.random() - 0.5) * 2.8;
+                    starPos[i] = (Math.random() - 0.5) * spread;
                 }
                 starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
                 const starMat = new THREE.PointsMaterial({
                     color: 0xffffff,
-                    size: 0.005,
+                    size: 0.006,
                     transparent: true,
                     opacity: 0.6,
                     sizeAttenuation: true,
@@ -475,11 +475,9 @@
                 renderer.setAnimationLoop(() => {
                     // Rotasi Bumi (GLB atau fallback sphere)
                     if (earthGroup) {
-                        // Jika GLB, cari child pertama dan rotasi
                         if (gltfScene) {
                             gltfScene.rotation.y += 0.004;
                         } else {
-                            // fallback: rotasi mesh langsung
                             earthGroup.children.forEach(child => {
                                 if (child.isMesh) child.rotation.y += 0.004;
                             });
@@ -495,7 +493,7 @@
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR aktif!';
+                statusMsg.textContent = '✅ AR aktif! (Bumi diperbesar)';
 
             } catch (err) {
                 console.error(err);
