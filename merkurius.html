@@ -144,13 +144,13 @@
 
     <div id="overlay">
         <h1>Start the adventure</h1>
-        <button id="startBtn">🚀 Mulai AR</button>
+        <button id="startBtn">Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
 
     <div id="hud">
-        <span>☿️ Cari gambar target…</span>
-        <button id="stopBtn">✕ Stop</button>
+        <span>Cari gambar target...</span>
+        <button id="stopBtn">Stop</button>
     </div>
 
     <div id="container"></div>
@@ -159,7 +159,7 @@
         import * as THREE from 'three';
         import { MindARThree } from 'mindar-image-three';
 
-        // ─── DOM refs ───────────────────────────────────────────────
+        // DOM refs
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const overlay = document.getElementById('overlay');
@@ -173,7 +173,7 @@
         let planetMesh = null;
         let stars = null;
 
-        // ─── Fit "contain" untuk video & canvas ───────────────────
+        // Fit "contain" untuk video & canvas
         function applyContainFit() {
             const video = container.querySelector('video');
             const canvas = container.querySelector('canvas');
@@ -214,7 +214,7 @@
             applyContainFit();
         }
 
-        // ─── Buat tekstur Merkurius (procedural) ──────────────────
+        // Buat tekstur Merkurius (procedural)
         function createMercuryTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -334,19 +334,19 @@
             return tex;
         }
 
-        // ─── Start AR ──────────────────────────────────────────────
+        // Start AR
         async function startAR() {
             try {
-                statusMsg.textContent = '⏳ Meminta izin kamera…';
+                statusMsg.textContent = 'Meminta izin kamera...';
 
                 mindarThree = new MindARThree({
                     container,
-                    imageTargetSrc: 'targets/merkurius.mind', // ← file target Merkurius
+                    imageTargetSrc: 'targets/merkurius.mind',
                 });
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // ─── Pencahayaan ───────────────────────────────────
+                // Pencahayaan
                 const ambient = new THREE.AmbientLight(0x404060, 0.6);
                 scene.add(ambient);
 
@@ -361,10 +361,10 @@
                 fillLight.position.set(-2, 0.5, -1);
                 scene.add(fillLight);
 
-                // ─── Anchor target ─────────────────────────────────
+                // Anchor target
                 const anchor = mindarThree.addAnchor(0);
 
-                // ─── Buat Merkurius ────────────────────────────────
+                // Buat Merkurius
                 const planetRadius = 0.3;
                 const texture = createMercuryTexture();
 
@@ -379,7 +379,7 @@
                 planetGroup = new THREE.Group();
                 planetGroup.add(planetMesh);
 
-                // ─── Atmosfer tipis (opsional) ─────────────────────
+                // Atmosfer tipis (opsional)
                 const atmosMat = new THREE.MeshBasicMaterial({
                     color: 0x8888aa,
                     transparent: true,
@@ -392,7 +392,7 @@
 
                 anchor.group.add(planetGroup);
 
-                // ─── Bintang-bintang latar ─────────────────────────
+                // Bintang-bintang latar
                 const starGeo = new THREE.BufferGeometry();
                 const starCount = 400;
                 const starPos = new Float32Array(starCount * 3);
@@ -412,7 +412,7 @@
                 stars.position.y = 0.2;
                 anchor.group.add(stars);
 
-                // ─── Tampilkan AR ──────────────────────────────────
+                // Tampilkan AR
                 overlay.style.display = 'none';
                 container.style.display = 'block';
                 hud.style.display = 'flex';
@@ -422,7 +422,7 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                // ─── Animasi Loop ──────────────────────────────────
+                // Animasi Loop
                 renderer.setAnimationLoop(() => {
                     // Rotasi Merkurius (lambat)
                     if (planetGroup) {
@@ -435,15 +435,15 @@
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR Merkurius aktif!';
+                statusMsg.textContent = 'AR Merkurius aktif.';
 
             } catch (err) {
                 console.error(err);
-                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+                statusMsg.textContent = 'Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
-        // ─── Stop AR ───────────────────────────────────────────────
+        // Stop AR
         async function stopAR() {
             window.removeEventListener('resize', onWindowResize);
             if (fitRAF) cancelAnimationFrame(fitRAF);
@@ -462,7 +462,7 @@
             stars = null;
         }
 
-        // ─── Event listeners ──────────────────────────────────────
+        // Event listeners
         startBtn.addEventListener('click', startAR);
         stopBtn.addEventListener('click', stopAR);
     </script>
