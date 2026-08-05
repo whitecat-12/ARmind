@@ -214,38 +214,38 @@
             applyContainFit();
         }
 
-        // ─── Buat tekstur Mars (procedural) ──────────────────────
+        // ─── Buat tekstur Mars (procedural) — PERBAIKAN WARNA MERAH ──
         function createMarsTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
             canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // 1. Warna dasar merah-kecoklatan
+            // 1. Warna dasar MERAH (bukan coklat)
             const grad = ctx.createRadialGradient(512, 512, 0, 512, 512, 512);
-            grad.addColorStop(0, '#e08e6a');
-            grad.addColorStop(0.3, '#c4713c');
-            grad.addColorStop(0.6, '#a85a2a');
-            grad.addColorStop(0.85, '#8a4a1a');
-            grad.addColorStop(1, '#5c2e0e');
+            grad.addColorStop(0, '#d4583a');   // merah-oranye terang
+            grad.addColorStop(0.3, '#c1440e'); // merah bata
+            grad.addColorStop(0.6, '#9a2a1a'); // merah gelap
+            grad.addColorStop(0.85, '#6b1a0a');// merah sangat gelap
+            grad.addColorStop(1, '#3d0a00');   // hampir hitam kemerahan
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 1024, 1024);
 
-            // 2. Variasi warna (bintik-bintik)
+            // 2. Variasi warna (bintik-bintik) — lebih merah
             for (let i = 0; i < 8000; i++) {
                 const x = Math.random() * 1024;
                 const y = Math.random() * 1024;
                 const r = Math.random() * 6 + 1;
-                const brightness = 100 + Math.random() * 120;
-                const hue = 10 + Math.random() * 20;
-                const alpha = Math.random() * 0.3 + 0.05;
+                const brightness = 80 + Math.random() * 100;
+                const hue = 5 + Math.random() * 15;   // dominan merah
+                const alpha = Math.random() * 0.25 + 0.05;
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${hue}, 70%, ${brightness-30}%, ${alpha})`;
+                ctx.fillStyle = `hsla(${hue}, 80%, ${brightness-20}%, ${alpha})`;
                 ctx.fill();
             }
 
-            // 3. Kawah-kawah besar
+            // 3. Kawah-kawah besar (sama seperti sebelumnya)
             const craters = [
                 { x: 200, y: 300, r: 60, depth: 0.6 },
                 { x: 700, y: 200, r: 45, depth: 0.5 },
@@ -268,7 +268,6 @@
             ];
 
             craters.forEach((c) => {
-                // Shadow (bagian gelap)
                 const shadowGrad = ctx.createRadialGradient(
                     c.x - c.r * 0.2, c.y - c.r * 0.2, 0,
                     c.x, c.y, c.r
@@ -281,20 +280,18 @@
                 ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Highlight (bagian terang di sisi lain)
                 const hlGrad = ctx.createRadialGradient(
                     c.x + c.r * 0.3, c.y + c.r * 0.3, 0,
                     c.x, c.y, c.r * 0.8
                 );
-                hlGrad.addColorStop(0, `rgba(255,200,150,${0.2 * c.depth})`);
-                hlGrad.addColorStop(1, `rgba(255,200,150,0)`);
+                hlGrad.addColorStop(0, `rgba(255,180,120,${0.2 * c.depth})`);
+                hlGrad.addColorStop(1, `rgba(255,180,120,0)`);
                 ctx.fillStyle = hlGrad;
                 ctx.beginPath();
                 ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Lingkaran tepi kawah
-                ctx.strokeStyle = `rgba(60,30,10,${0.3 * c.depth})`;
+                ctx.strokeStyle = `rgba(40,15,5,${0.3 * c.depth})`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(c.x, c.y, c.r * 0.9, 0, Math.PI * 2);
@@ -318,7 +315,7 @@
             }
 
             // 5. Retakan / lembah (Valles Marineris style)
-            ctx.strokeStyle = 'rgba(40,20,5,0.25)';
+            ctx.strokeStyle = 'rgba(30,10,5,0.2)';
             ctx.lineWidth = 3;
             for (let i = 0; i < 40; i++) {
                 const x = Math.random() * 1024;
@@ -337,14 +334,14 @@
                 ctx.stroke();
             }
 
-            // 6. Daerah terang (kutub / debu)
+            // 6. Daerah terang (kutub / debu) — warna lebih hangat
             for (let i = 0; i < 100; i++) {
                 const x = Math.random() * 1024;
                 const y = Math.random() * 1024;
                 const r = Math.random() * 20 + 5;
                 const grad2 = ctx.createRadialGradient(x, y, 0, x, y, r);
-                grad2.addColorStop(0, 'rgba(220, 200, 170, 0.1)');
-                grad2.addColorStop(1, 'rgba(220, 200, 170, 0)');
+                grad2.addColorStop(0, 'rgba(255, 200, 160, 0.12)');
+                grad2.addColorStop(1, 'rgba(255, 200, 160, 0)');
                 ctx.fillStyle = grad2;
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -355,6 +352,7 @@
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
             tex.repeat.set(1, 1);
+            tex.colorSpace = THREE.SRGBColorSpace; // biar warna lebih cerah
             return tex;
         }
 
@@ -370,18 +368,18 @@
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // ─── Pencahayaan ───────────────────────────────────
-                const ambient = new THREE.AmbientLight(0x404060, 0.6);
+                // ─── Pencahayaan — PERBAIKAN: ambient hangat, bukan biru ──
+                const ambient = new THREE.AmbientLight(0x332211, 0.5); // coklat hangat
                 scene.add(ambient);
 
-                const hemiLight = new THREE.HemisphereLight(0xffcc88, 0x332211, 0.8);
+                const hemiLight = new THREE.HemisphereLight(0xffcc88, 0x221100, 0.8);
                 scene.add(hemiLight);
 
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+                const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
                 dirLight.position.set(2, 3, 2);
                 scene.add(dirLight);
 
-                const fillLight = new THREE.DirectionalLight(0xcc8866, 0.5);
+                const fillLight = new THREE.DirectionalLight(0xff8844, 0.4);
                 fillLight.position.set(-2, 0.5, -1);
                 scene.add(fillLight);
 
@@ -394,7 +392,7 @@
 
                 const material = new THREE.MeshStandardMaterial({
                     map: texture,
-                    roughness: 0.8,
+                    roughness: 0.75,
                     metalness: 0.05,
                 });
 
