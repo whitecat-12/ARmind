@@ -216,7 +216,11 @@
             applyContainFit();
         }
 
-        // Buat tekstur Matahari (procedural)
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.setCrossOrigin('anonymous');
+
+        // Buat tekstur Matahari (procedural, fallback kalau texture asli gagal dimuat)
         function createSunTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -277,6 +281,36 @@
             return tex;
         }
 
+        // Load texture dari URL dengan multiple sources, coba satu-satu
+        function loadTextureFromURL(urls) {
+            return new Promise((resolve, reject) => {
+                let index = 0;
+                function tryNext() {
+                    if (index >= urls.length) {
+                        reject(new Error('Semua URL gagal dimuat'));
+                        return;
+                    }
+                    const url = urls[index];
+                    textureLoader.load(
+                        url,
+                        (tex) => {
+                            tex.wrapS = THREE.RepeatWrapping;
+                            tex.wrapT = THREE.RepeatWrapping;
+                            tex.repeat.set(1, 1);
+                            tex.colorSpace = THREE.SRGBColorSpace;
+                            resolve(tex);
+                        },
+                        undefined,
+                        () => {
+                            index++;
+                            tryNext();
+                        }
+                    );
+                }
+                tryNext();
+            });
+        }
+
         // Start AR
         async function startAR() {
             try {
@@ -295,7 +329,22 @@
                 const anchor = mindarThree.addAnchor(0);
 
                 const sunRadius = 0.4;
-                const sunTexture = createSunTexture();
+
+                // Coba muat texture asli Matahari (CC BY 4.0 — Solar System Scope),
+                // dengan fallback ke mirror Wikimedia, lalu ke procedural kalau semua gagal.
+                let sunTexture;
+                try {
+                    statusMsg.textContent = 'Memuat texture Matahari...';
+                    sunTexture = await loadTextureFromURL([
+                        'https://www.solarsystemscope.com/textures/download/2k_sun.jpg',
+                        'https://commons.wikimedia.org/wiki/Special:FilePath/Solarsystemscope_texture_2k_sun.jpg',
+                    ]);
+                    statusMsg.textContent = 'Texture Matahari dimuat';
+                } catch (err) {
+                    console.warn('Gagal memuat texture Matahari, pakai procedural fallback:', err);
+                    statusMsg.textContent = 'Gagal muat texture, pakai procedural.';
+                    sunTexture = createSunTexture();
+                }
 
                 const sunMaterial = new THREE.MeshStandardMaterial({
                     map: sunTexture,
