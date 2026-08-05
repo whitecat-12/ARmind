@@ -458,11 +458,11 @@
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // Background gelap total
-                scene.background = new THREE.Color(0x000000);
+                // ⚠️ JANGAN set scene.background — biarkan transparan agar video kamera terlihat!
+                // scene.background = new THREE.Color(0x000000); // <-- HAPUS ini!
 
-                // Ambient redup
-                const ambient = new THREE.AmbientLight(0x111122, 0.3);
+                // Ambient redup — biarkan kamera tetap terang
+                const ambient = new THREE.AmbientLight(0x333355, 0.3);
                 scene.add(ambient);
 
                 // Light directional untuk efek 3D
@@ -485,7 +485,7 @@
                     color: 0xffffff,
                     size: 0.012,
                     transparent: true,
-                    opacity: 0.8,
+                    opacity: 0.7,
                     sizeAttenuation: true,
                 });
                 stars = new THREE.Points(starGeo, starMat);
@@ -627,16 +627,16 @@
                 coronaParticles.userData = { speeds: coronaSpeeds, offsets: coronaOffsets };
                 sunGroup.add(coronaParticles);
 
-                // === CAHAYA TITIK ===
-                const light1 = new THREE.PointLight(0xffaa44, 6.0, 0, 0);
+                // === CAHAYA TITIK — lebih kuat ===
+                const light1 = new THREE.PointLight(0xffaa44, 8.0, 0, 0);
                 light1.position.set(0, 0, 0);
                 anchor.group.add(light1);
 
-                const light2 = new THREE.PointLight(0xff8833, 3.0, 0, 0);
+                const light2 = new THREE.PointLight(0xff8833, 4.0, 0, 0);
                 light2.position.set(0.4, 0.4, 0.4);
                 anchor.group.add(light2);
 
-                const light3 = new THREE.PointLight(0xff6600, 2.0, 0, 0);
+                const light3 = new THREE.PointLight(0xff6600, 3.0, 0, 0);
                 light3.position.set(-0.3, -0.3, 0.3);
                 anchor.group.add(light3);
 
@@ -668,7 +668,6 @@
                         if (coronaParticles) {
                             coronaParticles.rotation.y += 0.0012;
                             coronaParticles.rotation.x += 0.0004;
-                            // Pulsasi ukuran partikel
                             const pulse = 0.85 + 0.15 * Math.sin(elapsed * 0.3);
                             coronaParticles.material.size = 0.035 * pulse;
                             coronaParticles.material.opacity = 0.45 + 0.15 * Math.sin(elapsed * 0.2 + 1.0);
