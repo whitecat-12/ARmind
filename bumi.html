@@ -148,13 +148,13 @@
     <!-- OVERLAY: hanya judul & tombol -->
     <div id="overlay">
         <h1>Start the adventure</h1>
-        <button id="startBtn">🚀 Mulai AR</button>
+        <button id="startBtn">Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
 
     <div id="hud">
-        <span>🌍 Cari gambar target…</span>
-        <button id="stopBtn">✕ Stop</button>
+        <span>Cari gambar target...</span>
+        <button id="stopBtn">Stop</button>
     </div>
 
     <div id="container"></div>
@@ -293,7 +293,7 @@
         // ─── Start AR ──────────────────────────────────────────────
         async function startAR() {
             try {
-                statusMsg.textContent = '⏳ Meminta izin kamera…';
+                statusMsg.textContent = 'Meminta izin kamera...';
 
                 mindarThree = new MindARThree({
                     container,
@@ -316,7 +316,7 @@
                 const anchor = mindarThree.addAnchor(0);
 
                 // ─── Load GLB Bumi ─────────────────────────────────
-                statusMsg.textContent = '⏳ Memuat model Bumi…';
+                statusMsg.textContent = 'Memuat model Bumi...';
                 const loader = new GLTFLoader();
 
                 try {
@@ -342,10 +342,10 @@
                     earthGroup.add(gltfScene);
                     anchor.group.add(earthGroup);
 
-                    statusMsg.textContent = '✅ Model Bumi dimuat.';
+                    statusMsg.textContent = 'Model Bumi dimuat.';
                 } catch (err) {
                     console.warn('Gagal load bumi.glb, pakai sphere fallback:', err);
-                    statusMsg.textContent = '⚠️ Model GLB gagal, pakai fallback.';
+                    statusMsg.textContent = 'Gagal load bumi.glb, pakai fallback.';
 
                     const fallbackTex = await loadTextureWithFallback(
                         'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
@@ -437,11 +437,11 @@
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR aktif!';
+                statusMsg.textContent = 'AR aktif.';
 
             } catch (err) {
                 console.error(err);
-                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+                statusMsg.textContent = 'Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
