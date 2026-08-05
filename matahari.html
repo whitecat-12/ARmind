@@ -144,13 +144,13 @@
 
     <div id="overlay">
         <h1>Start the adventure</h1>
-        <button id="startBtn">🚀 Mulai AR</button>
+        <button id="startBtn">Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
 
     <div id="hud">
-        <span>☀️ Cari gambar target…</span>
-        <button id="stopBtn">✕ Stop</button>
+        <span>Cari gambar target...</span>
+        <button id="stopBtn">Stop</button>
     </div>
 
     <div id="container"></div>
@@ -159,7 +159,7 @@
         import * as THREE from 'three';
         import { MindARThree } from 'mindar-image-three';
 
-        // ─── DOM refs ───────────────────────────────────────────────
+        // DOM refs
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const overlay = document.getElementById('overlay');
@@ -175,7 +175,7 @@
         let sunLight = null;
         let stars = null;
 
-        // ─── Fit "contain" untuk video & canvas ───────────────────
+        // Fit "contain" untuk video & canvas
         function applyContainFit() {
             const video = container.querySelector('video');
             const canvas = container.querySelector('canvas');
@@ -198,10 +198,10 @@
             const top = (ch - h) / 2;
 
             [video, canvas].forEach((el) => {
-                el.style.width = `${w}px`;
-                el.style.height = `${h}px`;
-                el.style.left = `${left}px`;
-                el.style.top = `${top}px`;
+                el.style.width = w + 'px';
+                el.style.height = h + 'px';
+                el.style.left = left + 'px';
+                el.style.top = top + 'px';
             });
             return true;
         }
@@ -216,14 +216,13 @@
             applyContainFit();
         }
 
-        // ─── Buat tekstur Matahari yang bagus (procedural) ──────
+        // Buat tekstur Matahari (procedural)
         function createSunTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
             canvas.height = 1024;
             const ctx = canvas.getContext('2d');
 
-            // 1. Gradasi dasar
             const grad = ctx.createRadialGradient(512, 512, 0, 512, 512, 512);
             grad.addColorStop(0, '#fffbe0');
             grad.addColorStop(0.2, '#fde047');
@@ -233,7 +232,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 1024, 1024);
 
-            // 2. Bintik-bintik api (granulasi)
             for (let i = 0; i < 8000; i++) {
                 const x = Math.random() * 1024;
                 const y = Math.random() * 1024;
@@ -242,11 +240,10 @@
                 const hue = 30 + Math.random() * 20;
                 ctx.beginPath();
                 ctx.arc(x, y, r, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
+                ctx.fillStyle = 'hsla(' + hue + ', 90%, 70%, ' + alpha + ')';
                 ctx.fill();
             }
 
-            // 3. Serat / garis-garis api
             ctx.strokeStyle = 'rgba(255, 200, 50, 0.08)';
             ctx.lineWidth = 2;
             for (let i = 0; i < 200; i++) {
@@ -260,7 +257,6 @@
                 ctx.stroke();
             }
 
-            // 4. Beberapa titik terang (flare)
             for (let i = 0; i < 30; i++) {
                 const x = Math.random() * 1024;
                 const y = Math.random() * 1024;
@@ -281,10 +277,10 @@
             return tex;
         }
 
-        // ─── Start AR ──────────────────────────────────────────────
+        // Start AR
         async function startAR() {
             try {
-                statusMsg.textContent = '⏳ Meminta izin kamera…';
+                statusMsg.textContent = 'Meminta izin kamera...';
 
                 mindarThree = new MindARThree({
                     container,
@@ -293,18 +289,14 @@
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // ─── Pencahayaan ambient untuk menerangi objek lain ──
                 const ambient = new THREE.AmbientLight(0x222244, 0.5);
                 scene.add(ambient);
 
-                // ─── Anchor target ─────────────────────────────────
                 const anchor = mindarThree.addAnchor(0);
 
-                // ─── Buat Matahari dengan Three.js ────────────────
                 const sunRadius = 0.4;
                 const sunTexture = createSunTexture();
 
-                // Material utama
                 const sunMaterial = new THREE.MeshStandardMaterial({
                     map: sunTexture,
                     emissive: new THREE.Color(0xff8800),
@@ -318,7 +310,6 @@
                 sunGroup = new THREE.Group();
                 sunGroup.add(sunMesh);
 
-                // ─── Efek Glow / Corona ────────────────────────────
                 const glowMaterial = new THREE.MeshBasicMaterial({
                     color: 0xff6600,
                     transparent: true,
@@ -329,7 +320,6 @@
                 glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
                 sunGroup.add(glowMesh);
 
-                // ─── Partikel api di sekitar (opsional) ────────────
                 const particleCount = 400;
                 const positions = new Float32Array(particleCount * 3);
                 const sizes = new Float32Array(particleCount);
@@ -357,15 +347,12 @@
                 const particles = new THREE.Points(particleGeo, particleMat);
                 sunGroup.add(particles);
 
-                // Tambahkan ke anchor
                 anchor.group.add(sunGroup);
 
-                // ─── Point Light dari Matahari ─────────────────────
                 sunLight = new THREE.PointLight(0xffaa44, 2.5, 0, 0);
                 sunLight.position.set(0, 0, 0);
                 anchor.group.add(sunLight);
 
-                // ─── Bintang-bintang latar ─────────────────────────
                 const starGeo = new THREE.BufferGeometry();
                 const starCount = 300;
                 const starPos = new Float32Array(starCount * 3);
@@ -385,7 +372,6 @@
                 stars.position.y = 0.2;
                 anchor.group.add(stars);
 
-                // ─── Tampilkan AR ──────────────────────────────────
                 overlay.style.display = 'none';
                 container.style.display = 'block';
                 hud.style.display = 'flex';
@@ -395,31 +381,27 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                // ─── Animasi Loop ──────────────────────────────────
                 renderer.setAnimationLoop(() => {
-                    // Rotasi Matahari
                     if (sunGroup) {
                         sunGroup.rotation.y += 0.003;
-                        // Rotasi partikel juga
                         particles.rotation.y += 0.001;
                         particles.rotation.x += 0.0005;
                     }
 
-                    // Bintang berputar pelan
                     if (stars) stars.rotation.y += 0.0002;
 
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR Matahari aktif!';
+                statusMsg.textContent = 'AR Matahari aktif.';
 
             } catch (err) {
                 console.error(err);
-                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+                statusMsg.textContent = 'Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
-        // ─── Stop AR ───────────────────────────────────────────────
+        // Stop AR
         async function stopAR() {
             window.removeEventListener('resize', onWindowResize);
             if (fitRAF) cancelAnimationFrame(fitRAF);
@@ -440,7 +422,7 @@
             stars = null;
         }
 
-        // ─── Event listeners ──────────────────────────────────────
+        // Event listeners
         startBtn.addEventListener('click', startAR);
         stopBtn.addEventListener('click', stopAR);
     </script>
