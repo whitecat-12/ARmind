@@ -144,13 +144,13 @@
 
     <div id="overlay">
         <h1>Start the adventure</h1>
-        <button id="startBtn">🚀 Mulai AR</button>
+        <button id="startBtn">Mulai AR</button>
         <p id="statusMsg"></p>
     </div>
 
     <div id="hud">
-        <span>♆ Cari gambar target…</span>
-        <button id="stopBtn">✕ Stop</button>
+        <span>Cari gambar target...</span>
+        <button id="stopBtn">Stop</button>
     </div>
 
     <div id="container"></div>
@@ -159,7 +159,7 @@
         import * as THREE from 'three';
         import { MindARThree } from 'mindar-image-three';
 
-        // ─── DOM refs ───────────────────────────────────────────────
+        // DOM refs
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const overlay = document.getElementById('overlay');
@@ -173,7 +173,7 @@
         let planetMesh = null;
         let stars = null;
 
-        // ─── Fit "contain" untuk video & canvas ───────────────────
+        // Fit "contain" untuk video & canvas
         function applyContainFit() {
             const video = container.querySelector('video');
             const canvas = container.querySelector('canvas');
@@ -214,17 +214,16 @@
             applyContainFit();
         }
 
-        // ─── Texture loader ─────────────────────────────────────────
+        // Texture loader
         const textureLoader = new THREE.TextureLoader();
 
-        // ─── Buat tekstur Neptunus (procedural) sebagai fallback ───
+        // Buat tekstur Neptunus (procedural) sebagai fallback
         function createNeptuneTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
             canvas.height = 512;
             const ctx = canvas.getContext('2d');
 
-            // Warna dasar biru tua
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
             grad.addColorStop(0, '#4a7db5');
             grad.addColorStop(0.2, '#3a6a9e');
@@ -235,7 +234,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Pita awan halus
             const bands = [
                 { y: 0.1, h: 0.04, color: 'rgba(100, 160, 220, 0.3)' },
                 { y: 0.25, h: 0.05, color: 'rgba(80, 140, 200, 0.25)' },
@@ -252,7 +250,6 @@
                 ctx.fillRect(0, yPos, canvas.width, height);
             });
 
-            // Detail awan
             for (let i = 0; i < 400; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
@@ -271,7 +268,7 @@
             return tex;
         }
 
-        // ─── Load texture dari URL ────────────────────────────────
+        // Load texture dari URL
         function loadTextureFromURL(url) {
             return new Promise((resolve, reject) => {
                 textureLoader.load(
@@ -288,10 +285,10 @@
             });
         }
 
-        // ─── Start AR ──────────────────────────────────────────────
+        // Start AR
         async function startAR() {
             try {
-                statusMsg.textContent = '⏳ Meminta izin kamera…';
+                statusMsg.textContent = 'Meminta izin kamera...';
 
                 mindarThree = new MindARThree({
                     container,
@@ -300,7 +297,7 @@
 
                 const { renderer, scene, camera } = mindarThree;
 
-                // ─── Pencahayaan ───────────────────────────────────
+                // Pencahayaan
                 const ambient = new THREE.AmbientLight(0x404060, 0.6);
                 scene.add(ambient);
 
@@ -315,22 +312,22 @@
                 fillLight.position.set(-2, 0.5, -1);
                 scene.add(fillLight);
 
-                // ─── Anchor target ─────────────────────────────────
+                // Anchor target
                 const anchor = mindarThree.addAnchor(0);
 
-                // ─── Buat Neptunus ─────────────────────────────────
+                // Buat Neptunus
                 const planetRadius = 0.38;
                 let texture;
 
                 try {
-                    statusMsg.textContent = '⏳ Memuat texture Neptunus…';
+                    statusMsg.textContent = 'Memuat texture Neptunus...';
                     texture = await loadTextureFromURL(
                         'https://threejs.org/examples/textures/planets/neptune.jpg'
                     );
-                    statusMsg.textContent = '✅ Texture Neptunus dimuat (PNG)';
+                    statusMsg.textContent = 'Texture Neptunus dimuat (PNG)';
                 } catch (err) {
                     console.warn('Gagal memuat texture Neptunus, pakai procedural fallback:', err);
-                    statusMsg.textContent = '⚠️ Gagal muat texture, pakai procedural.';
+                    statusMsg.textContent = 'Gagal muat texture, pakai procedural.';
                     texture = createNeptuneTexture();
                 }
 
@@ -345,12 +342,11 @@
                 const geometry = new THREE.SphereGeometry(planetRadius, 64, 64);
                 planetMesh = new THREE.Mesh(geometry, material);
 
-                // ─── Planet dengan kemiringan sumbu ~28° ──────────
                 planetGroup = new THREE.Group();
-                planetGroup.rotation.x = 0.49; // ~28° dalam radian
+                planetGroup.rotation.x = 0.49;
                 planetGroup.add(planetMesh);
 
-                // ─── Atmosfer / glow ──────────────────────────────
+                // Atmosfer / glow
                 const atmosMat = new THREE.MeshBasicMaterial({
                     color: 0x4488ff,
                     transparent: true,
@@ -361,9 +357,7 @@
                 const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
                 planetGroup.add(atmosMesh);
 
-                // ─── Tambahkan efek "titik gelap" (Great Dark Spot) ──
-                // Ini adalah fitur khas Neptunus, kita tambahkan sebagai decal sederhana
-                // Karena tidak ada texture tambahan, kita buat dengan sphere kecil di permukaan
+                // Great Dark Spot (titik gelap)
                 const spotMat = new THREE.MeshBasicMaterial({
                     color: 0x1a2a4a,
                     transparent: true,
@@ -374,10 +368,9 @@
                 spot.position.set(planetRadius * 0.7, planetRadius * 0.3, planetRadius * 0.4);
                 planetGroup.add(spot);
 
-                // Tambahkan ke anchor
                 anchor.group.add(planetGroup);
 
-                // ─── Bintang-bintang latar ─────────────────────────
+                // Bintang-bintang latar
                 const starGeo = new THREE.BufferGeometry();
                 const starCount = 500;
                 const starPos = new Float32Array(starCount * 3);
@@ -397,7 +390,7 @@
                 stars.position.y = 0.2;
                 anchor.group.add(stars);
 
-                // ─── Tampilkan AR ──────────────────────────────────
+                // Tampilkan AR
                 overlay.style.display = 'none';
                 container.style.display = 'block';
                 hud.style.display = 'flex';
@@ -407,7 +400,7 @@
                 waitAndFit();
                 window.addEventListener('resize', onWindowResize);
 
-                // ─── Animasi Loop ──────────────────────────────────
+                // Animasi Loop
                 renderer.setAnimationLoop(() => {
                     if (planetGroup) {
                         planetGroup.rotation.y += 0.004;
@@ -416,15 +409,15 @@
                     renderer.render(scene, camera);
                 });
 
-                statusMsg.textContent = '✅ AR Neptunus aktif!';
+                statusMsg.textContent = 'AR Neptunus aktif.';
 
             } catch (err) {
                 console.error(err);
-                statusMsg.textContent = '❌ Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
+                statusMsg.textContent = 'Gagal mengakses kamera. Pastikan pakai HTTPS atau localhost, dan izin kamera diberikan.';
             }
         }
 
-        // ─── Stop AR ───────────────────────────────────────────────
+        // Stop AR
         async function stopAR() {
             window.removeEventListener('resize', onWindowResize);
             if (fitRAF) cancelAnimationFrame(fitRAF);
@@ -443,7 +436,7 @@
             stars = null;
         }
 
-        // ─── Event listeners ──────────────────────────────────────
+        // Event listeners
         startBtn.addEventListener('click', startAR);
         stopBtn.addEventListener('click', stopAR);
     </script>
